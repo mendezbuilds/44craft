@@ -19,8 +19,10 @@ export default async function TeamPage() {
         Craftsmen figuring it out with no handouts.
       </p>
 
+      {/* items-start — see team-teaser-grid.tsx's comment on the same
+          grid class; cards aren't uniformly aspect-locked anymore. */}
       {profiles.length > 0 ? (
-        <div className="grid grid-cols-2 gap-6 min-[601px]:grid-cols-3 min-[901px]:grid-cols-4">
+        <div className="grid grid-cols-2 items-start gap-6 min-[601px]:grid-cols-3 min-[901px]:grid-cols-4">
           {profiles.map((profile) => (
             <TeamCard
               key={profile.id}

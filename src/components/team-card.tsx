@@ -38,20 +38,29 @@ const MAX_TILT = 8; // degrees
  * not raw motion-value writes from a pointer handler, so this checks
  * matchMedia itself rather than relying on that.
  *
- * Sizing: only the outermost wrapper carries `aspect-[3/4]`, and nothing
- * else on it — no competing `h-full`. That resolves the card's height
- * unambiguously from its own (definite, grid-track) width, no percentage
- * chain involved. The tilt wrapper underneath is `absolute inset-0`
- * rather than `h-full`, so it fills that resolved box directly instead of
- * asking the browser to resolve `height:100%` against it — verified live
- * (previous version of this fix reasoned through the CSS spec instead of
- * actually checking a real render, and was still broken: aspect-ratio and
- * height:100% on the same element are competing declarations, and even
- * with that resolved, `h-full` one level down still depends on the
- * browser treating the aspect-ratio'd box's resolved height as "definite"
- * for percentage purposes, which isn't guaranteed inside a CSS Grid item).
- * `inset-0` doesn't have that dependency — it's resolved against the
- * nearest positioned ancestor's actual box, full stop.
+ * Sizing (rewritten after two rounds of a wrong diagnosis — see git
+ * history if curious, but the short version: it was never a percentage-
+ * height/CSS-cascade bug at all). The card used to fix its *total* height
+ * via `aspect-[3/4]` on the outer box, with the image area as a
+ * `flex-1` child competing against the info panel (name/role/skills
+ * text) for whatever space was left. Confirmed via real DOM measurement
+ * against the live site: on a narrow 2-column mobile grid, the info
+ * panel's wrapped text alone needs *more* height than the entire
+ * aspect-locked card — so the flex-1 image area got squeezed to exactly
+ * 0, while the overflowing text got silently clipped by the card's own
+ * `overflow-hidden`. Fine on wide desktop columns (more width per card,
+ * less text wrapping), broken on mobile.
+ *
+ * Fix: the image area gets its *own* fixed aspect ratio (`aspect-square`)
+ * instead of stretching to fill leftover space, so its size no longer
+ * depends on how much text is below it. The card's total height is just
+ * "image's own height + however tall the text needs to be" — no more
+ * competition, nothing to squeeze to zero. No fixed height anywhere on
+ * the outer wrappers either now; they're auto/content-sized. The team
+ * grids (team-teaser-grid.tsx, /team/page.tsx) use `items-start` so CSS
+ * Grid's default stretch-to-row-height behavior doesn't force
+ * same-row cards to an artificial uniform height now that they're not
+ * all identically aspect-locked.
  */
 export function TeamCard({ member }: { member: TeamCardMember }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -74,20 +83,15 @@ export function TeamCard({ member }: { member: TeamCardMember }) {
   }
 
   return (
-    <motion.div
-      ref={ref}
-      onPointerMove={handlePointerMove}
-      onPointerLeave={handlePointerLeave}
-      style={{ perspective: 800 }}
-      className="relative aspect-[3/4]"
-    >
-      <motion.div style={{ rotateX, rotateY }} className="absolute inset-0">
+    <motion.div ref={ref} onPointerMove={handlePointerMove} onPointerLeave={handlePointerLeave} style={{ perspective: 800 }}>
+      <motion.div style={{ rotateX, rotateY }}>
         <Link
           href={`/team/${member.slug}`}
-          className="team-card-glow group flex h-full flex-col overflow-hidden rounded-xl border border-[rgba(255,255,255,0.08)] transition-[border-color] duration-300 hover:border-[rgba(212,175,55,0.5)]"
+          className="team-card-glow group flex flex-col overflow-hidden rounded-xl border border-[rgba(255,255,255,0.08)] transition-[border-color] duration-300 hover:border-[rgba(212,175,55,0.5)]"
         >
-          {/* Image area — a real photo once uploaded, initials placeholder until then */}
-          <div className="relative flex flex-1 items-center justify-center overflow-hidden bg-gradient-to-br from-[#1a170f] to-[#0a0a08]">
+          {/* Image area — a real photo once uploaded, initials placeholder until then.
+              aspect-square (not flex-1) — see the sizing note above. */}
+          <div className="relative aspect-square shrink-0 overflow-hidden bg-gradient-to-br from-[#1a170f] to-[#0a0a08]">
             {member.photo ? (
               <Image
                 src={member.photo}
@@ -99,7 +103,7 @@ export function TeamCard({ member }: { member: TeamCardMember }) {
             ) : (
               <span
                 aria-hidden="true"
-                className="team-card-initials pointer-events-none select-none font-display font-extrabold transition-transform duration-500 group-hover:scale-105"
+                className="team-card-initials pointer-events-none absolute inset-0 flex select-none items-center justify-center font-display font-extrabold transition-transform duration-500 group-hover:scale-105"
               >
                 {initials(member.name)}
               </span>

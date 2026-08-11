@@ -101,8 +101,12 @@ export function TeamTeaserGrid({
         </div>
       )}
 
+      {/* items-start: cards are no longer uniformly aspect-locked (see
+          team-card.tsx's sizing note), so default grid stretch would
+          force every card in a row to the tallest one's height, leaving
+          an empty gap under shorter cards' info panels. */}
       {visible.length > 0 ? (
-        <div className="grid grid-cols-2 gap-6 min-[601px]:grid-cols-3 min-[901px]:grid-cols-4">
+        <div className="grid grid-cols-2 items-start gap-6 min-[601px]:grid-cols-3 min-[901px]:grid-cols-4">
           {visible.map((member, i) => (
             <div key={member.slug} className="relative">
               <GoldBurst active={bursting} size="big" />
