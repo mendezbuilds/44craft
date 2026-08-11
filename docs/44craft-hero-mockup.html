@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>44Craft — Hero Mockup v2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700;800&family=Inter:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --canvas: #0A0A08;
+    --ink: #F2EEFF;
+    --ink-dim: #B7B2C9;
+    --gold-deep: #8A6D1D;
+    --gold: #D4AF37;
+    --gold-light: #F5E1A4;
+    --line: rgba(255,255,255,0.07);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    background: var(--canvas);
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    overflow-x: hidden;
+  }
+  .scene {
+    position: relative;
+    min-height: 100vh;
+    background: var(--canvas);
+    overflow: hidden;
+  }
+  .constellation {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+  }
+
+  nav {
+    position: relative;
+    z-index: 6;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 26px 48px;
+  }
+  .brand { display: flex; align-items: center; gap: 11px; }
+  .diamond-mark {
+    width: 13px; height: 13px;
+    background: linear-gradient(135deg, var(--gold-deep), var(--gold), var(--gold-light));
+    transform: rotate(45deg);
+    box-shadow: 0 0 16px rgba(138,109,29,0.5);
+  }
+  .wordmark {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 17px;
+    letter-spacing: 0.5px;
+  }
+  .navlinks { display: flex; gap: 32px; }
+  .navlinks a {
+    color: var(--ink-dim);
+    text-decoration: none;
+    font-size: 13.5px;
+    font-weight: 500;
+  }
+  .navlinks a:hover { color: var(--ink); }
+  .cta {
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 13.5px;
+    color: #0A0A08;
+    background: var(--ink);
+    border: 1px solid var(--ink);
+    border-radius: 6px;
+    padding: 10px 20px;
+    cursor: pointer;
+    transition: box-shadow 0.2s ease, transform 0.15s ease;
+  }
+  .cta:hover { box-shadow: 0 0 20px rgba(245,225,164,0.3); }
+  .cta.ghost {
+    background: transparent;
+    border-color: rgba(255,255,255,0.14);
+    color: var(--ink-dim);
+  }
+  .cta.ghost:hover { box-shadow: 0 0 14px rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.3); }
+
+  /* --- EDITORIAL HERO --- */
+  .hero {
+    position: relative;
+    z-index: 2;
+    min-height: 88vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 0 48px;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  .watermark {
+    position: absolute;
+    left: -4%;
+    top: 46%;
+    transform: translateY(-50%);
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 800;
+    font-size: clamp(280px, 34vw, 560px);
+    line-height: 1;
+    color: transparent;
+    -webkit-text-stroke: 1px rgba(255,255,255,0.06);
+    z-index: 0;
+    user-select: none;
+    pointer-events: none;
+  }
+
+  .gem-float {
+    position: absolute;
+    right: -8%;
+    bottom: -14%;
+    width: min(52vw, 780px);
+    z-index: 1;
+    animation: float 7s ease-in-out infinite;
+  }
+  .gem-big {
+    display: block;
+    width: 100%;
+    opacity: 0;
+    transform: rotate(12deg) scale(0.92);
+    animation: gemIn 1s cubic-bezier(0.2,0.8,0.2,1) 0.15s forwards;
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-16px); }
+  }
+  @keyframes gemIn {
+    from { opacity: 0; transform: rotate(12deg) scale(0.92); }
+    to { opacity: 1; transform: rotate(12deg) scale(1); }
+  }
+  .facet-piece {
+    opacity: 0;
+    transform-origin: 200px 200px;
+    animation: facetIn 0.7s ease-out forwards;
+  }
+  .facet-piece:nth-child(1) { animation-delay: 0.35s; }
+  .facet-piece:nth-child(2) { animation-delay: 0.42s; }
+  .facet-piece:nth-child(3) { animation-delay: 0.49s; }
+  .facet-piece:nth-child(4) { animation-delay: 0.56s; }
+  .facet-piece:nth-child(5) { animation-delay: 0.63s; }
+  .facet-piece:nth-child(6) { animation-delay: 0.70s; }
+  .facet-piece:nth-child(7) { animation-delay: 0.77s; }
+  .facet-piece:nth-child(8) { animation-delay: 0.84s; }
+  @keyframes facetIn { from { opacity: 0; } to { opacity: 1; } }
+
+  .content {
+    position: relative;
+    z-index: 3;
+  }
+  .eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    margin-bottom: 22px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    opacity: 0;
+    animation: rise 0.6s ease-out 0.1s forwards;
+  }
+  .eyebrow::before {
+    content: "";
+    width: 6px; height: 6px;
+    background: linear-gradient(135deg, var(--gold-deep), var(--gold-light));
+    transform: rotate(45deg);
+  }
+  h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 800;
+    font-size: clamp(48px, 7vw, 96px);
+    line-height: 0.98;
+    letter-spacing: -1.5px;
+    max-width: 900px;
+    margin-bottom: 28px;
+    opacity: 0;
+    animation: rise 0.6s ease-out 0.22s forwards;
+  }
+  h1 .dim { color: var(--ink-dim); }
+  .sub {
+    font-size: 17px;
+    line-height: 1.6;
+    color: var(--ink-dim);
+    max-width: 420px;
+    margin-bottom: 38px;
+    opacity: 0;
+    animation: rise 0.6s ease-out 0.34s forwards;
+  }
+  .ctas {
+    display: flex;
+    gap: 14px;
+    opacity: 0;
+    animation: rise 0.6s ease-out 0.46s forwards;
+  }
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .shard {
+    position: absolute;
+    opacity: 0.3;
+    z-index: 1;
+    animation: drift 8s ease-in-out infinite;
+  }
+  @keyframes drift {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-14px) rotate(6deg); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .eyebrow, h1, .sub, .ctas, .gem-big, .facet-piece { animation: none !important; opacity: 1 !important; transform: none !important; }
+    .gem-big { transform: rotate(12deg) !important; }
+    .gem-float, .shard { animation: none !important; }
+  }
+
+  @media (max-width: 900px) {
+    nav { padding: 20px 24px; }
+    .navlinks { display: none; }
+    .hero { padding: 0 24px; min-height: 82vh; }
+    h1 { font-size: clamp(36px, 11vw, 56px); }
+    .watermark { display: none; }
+    .gem-float { width: 70vw; right: -14%; bottom: -8%; opacity: 0.5; }
+  }
+</style>
+</head>
+<body>
+<div class="scene">
+  <svg class="constellation" viewBox="0 0 1280 800" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <g stroke="rgba(255,255,255,0.06)" stroke-width="1">
+      <line x1="80" y1="60" x2="230" y2="140"/>
+      <line x1="230" y1="140" x2="150" y2="280"/>
+      <line x1="230" y1="140" x2="340" y2="90"/>
+      <line x1="340" y1="90" x2="420" y2="240"/>
+      <line x1="600" y1="60" x2="760" y2="180"/>
+      <line x1="760" y1="180" x2="880" y2="80"/>
+      <line x1="880" y1="80" x2="1030" y2="150"/>
+      <line x1="60" y1="420" x2="240" y2="520"/>
+      <line x1="150" y1="280" x2="60" y2="420"/>
+    </g>
+    <g fill="rgba(255,255,255,0.22)">
+      <circle cx="80" cy="60" r="2"/>
+      <circle cx="230" cy="140" r="2"/>
+      <circle cx="150" cy="280" r="2"/>
+      <circle cx="340" cy="90" r="2"/>
+      <circle cx="420" cy="240" r="2"/>
+      <circle cx="600" cy="60" r="2"/>
+      <circle cx="760" cy="180" r="2"/>
+      <circle cx="880" cy="80" r="2"/>
+      <circle cx="1030" cy="150" r="2"/>
+      <circle cx="60" cy="420" r="2"/>
+      <circle cx="240" cy="520" r="2"/>
+    </g>
+  </svg>
+
+  <nav>
+    <div class="brand">
+      <div class="diamond-mark"></div>
+      <span class="wordmark">44CRAFT</span>
+    </div>
+    <div class="navlinks">
+      <a href="#">About</a>
+      <a href="#">Services</a>
+      <a href="#">Team</a>
+      <a href="#">Work</a>
+      <a href="#">Community</a>
+    </div>
+    <button class="cta">Start a project</button>
+  </nav>
+
+  <div class="watermark">44</div>
+
+  <div class="gem-float">
+    <svg class="gem-big" viewBox="0 0 400 440" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="prism2" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#8A6D1D"/>
+          <stop offset="55%" stop-color="#D4AF37"/>
+          <stop offset="100%" stop-color="#F5E1A4"/>
+        </linearGradient>
+      </defs>
+      <g stroke="rgba(255,255,255,0.22)" stroke-width="0.75">
+        <polygon class="facet-piece" points="200,40 270,115 200,190" fill="url(#prism2)" fill-opacity="0.92"/>
+        <polygon class="facet-piece" points="270,115 340,190 200,190" fill="url(#prism2)" fill-opacity="0.62"/>
+        <polygon class="facet-piece" points="340,190 270,295 200,190" fill="url(#prism2)" fill-opacity="0.80"/>
+        <polygon class="facet-piece" points="270,295 200,400 200,190" fill="url(#prism2)" fill-opacity="0.50"/>
+        <polygon class="facet-piece" points="200,400 130,295 200,190" fill="url(#prism2)" fill-opacity="0.70"/>
+        <polygon class="facet-piece" points="130,295 60,190 200,190" fill="url(#prism2)" fill-opacity="0.55"/>
+        <polygon class="facet-piece" points="60,190 130,115 200,190" fill="url(#prism2)" fill-opacity="0.85"/>
+        <polygon class="facet-piece" points="130,115 200,40 200,190" fill="url(#prism2)" fill-opacity="0.68"/>
+      </g>
+    </svg>
+  </div>
+
+  <svg class="shard" style="left:8%; top:22%; width:22px; animation-delay:0.5s;" viewBox="0 0 40 40"><polygon points="20,2 38,36 2,36" fill="url(#prism2)"/></svg>
+  <svg class="shard" style="right:28%; top:14%; width:16px; animation-delay:2s;" viewBox="0 0 40 40"><polygon points="20,2 38,36 2,36" fill="url(#prism2)"/></svg>
+  <svg class="shard" style="right:6%; top:10%; width:26px; animation-delay:3.4s;" viewBox="0 0 40 40"><polygon points="20,2 38,36 2,36" fill="url(#prism2)"/></svg>
+
+  <div class="hero">
+    <div class="content">
+      <div class="eyebrow">4 rules — 4 outcome</div>
+      <h1>Craftsmen figuring it out <span class="dim">with no handouts.</span></h1>
+      <p class="sub">44Craft partners with real projects, ships real infrastructure, and grows a community that shows up — not just talks about it.</p>
+      <div class="ctas">
+        <button class="cta">Start a project</button>
+        <button class="cta ghost">See our work</button>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

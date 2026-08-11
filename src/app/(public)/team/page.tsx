@@ -1,0 +1,42 @@
+import type { Metadata } from "next";
+import { Section } from "@/components/ui/section";
+import { TeamCard } from "@/components/team-card";
+import { getPublishedTeamProfiles } from "@/lib/team-profile";
+
+export const metadata: Metadata = {
+  title: "Team — 44Craft",
+};
+
+export default async function TeamPage() {
+  const profiles = await getPublishedTeamProfiles();
+
+  return (
+    <Section className="py-24 min-[901px]:py-32">
+      <h1 className="mb-4 text-[clamp(32px,5vw,52px)] leading-[1.1] font-display font-bold tracking-[-1px] text-ink">
+        Team
+      </h1>
+      <p className="mb-12 max-w-[520px] text-[17px] leading-[1.6] text-ink-dim">
+        Craftsmen figuring it out with no handouts.
+      </p>
+
+      {profiles.length > 0 ? (
+        <div className="grid grid-cols-2 gap-6 min-[601px]:grid-cols-3 min-[901px]:grid-cols-4">
+          {profiles.map((profile) => (
+            <TeamCard
+              key={profile.id}
+              member={{
+                slug: profile.slug,
+                name: profile.name,
+                roleTitle: profile.roleTitle,
+                photo: profile.photo,
+                skills: profile.skills,
+              }}
+            />
+          ))}
+        </div>
+      ) : (
+        <p className="text-sm text-ink-dim">No published profiles yet.</p>
+      )}
+    </Section>
+  );
+}

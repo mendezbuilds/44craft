@@ -1,26 +1,131 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Gold correction (docs/44craft-hero-mockup.html v2) — supersedes the
+     original violet/blue/cyan palette from SPEC.md Section 2. Canvas moved
+     to a neutral near-black (was purple-tinted) to match. */
+  --canvas: #0a0a08;
+  --ink: #f2eeff;
+  --ink-dim: #b7b2c9;
+  --gold-deep: #8a6d1d;
+  --gold: #d4af37;
+  --gold-light: #f5e1a4;
+
+  /* Composite value, not a single token — not part of @theme below. */
+  --gradient-gold: linear-gradient(
+    135deg,
+    var(--gold-deep),
+    var(--gold),
+    var(--gold-light)
+  );
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-canvas: var(--canvas);
+  --color-ink: var(--ink);
+  --color-ink-dim: var(--ink-dim);
+  --color-gold-deep: var(--gold-deep);
+  --color-gold: var(--gold);
+  --color-gold-light: var(--gold-light);
+
+  --font-display: var(--font-display);
+  --font-body: var(--font-body);
+  --font-mono: var(--font-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* Single fixed dark theme — no prefers-color-scheme toggle, per SPEC.md
+   Section 2: "The background is dark and stays dark — no exceptions." */
+html,
+body {
+  background: var(--canvas);
+  color: var(--ink);
+}
+
+/* NOTE: this used to also set `overflow-x: hidden` here to clip bleeding
+   decorative elements (hero glow, drifting shards, the about watermark).
+   Removed — `overflow` on html/body (even just one axis) silently breaks
+   `position: sticky` for every descendant, which is why the navbar stopped
+   sticking. Each section that bleeds past its own edge now clips locally
+   instead (`overflow-hidden` on Hero's and About's own root elements) —
+   scoped containment instead of a global rule that had this side effect. */
+
+html {
+  scroll-behavior: smooth;
+  /* Clears the sticky navbar so an anchored section's heading isn't tucked
+     underneath it. */
+  scroll-padding-top: 96px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Outline-only "44" watermark behind the hero content. Not expressible as a
+   Tailwind utility (text-stroke has no utility class), and font-size needs
+   clamp() for the mockup's exact fluid scaling. */
+.hero-watermark {
+  -webkit-text-stroke: 1px rgba(255, 255, 255, 0.06);
+  color: transparent;
+  font-size: clamp(280px, 34vw, 560px);
+}
+
+/* Large, low-opacity initials on the team flip-card front face — same
+   "watermark" idea as .hero-watermark above (big, quiet, fills the space
+   behind real content) but filled rather than outline-only, since this is
+   standing in for a photo rather than sitting behind headline text. */
+.team-card-initials {
+  font-size: clamp(72px, 11vw, 120px);
+  color: rgba(242, 238, 255, 0.08);
+}
+
+/* Slow-breathing gold glow ring around the team cards — a persistent (not
+   hover-only) border treatment, per request. Intensifies further on hover
+   via Tailwind classes in team-card.tsx; this keyframe is just the ambient
+   idle state. Static fallback (no pulse) under reduced-motion, same
+   pattern as every other continuous loop on the site. */
+.team-card-glow {
+  animation: team-card-pulse 3.4s ease-in-out infinite;
+}
+
+@keyframes team-card-pulse {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 1px rgba(212, 175, 55, 0.22),
+      0 0 18px rgba(212, 175, 55, 0.12);
+  }
+  50% {
+    box-shadow:
+      0 0 0 1px rgba(212, 175, 55, 0.4),
+      0 0 30px rgba(212, 175, 55, 0.22);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .team-card-glow {
+    animation: none;
+    box-shadow:
+      0 0 0 1px rgba(212, 175, 55, 0.3),
+      0 0 22px rgba(212, 175, 55, 0.16);
+  }
+}
+
+/* Same breathing-glow idea as .team-card-glow above, reused (not
+   reinvented) for admin stat cards that need to visually flag "this
+   needs you" at rest — e.g. Pending reviews > 0 — rather than looking
+   identical to a card showing 0 (design-correction pass, SPEC.md
+   Section 8). */
+.admin-attention-glow {
+  animation: team-card-pulse 3.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-attention-glow {
+    animation: none;
+    box-shadow:
+      0 0 0 1px rgba(212, 175, 55, 0.3),
+      0 0 22px rgba(212, 175, 55, 0.16);
+  }
 }

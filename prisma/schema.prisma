@@ -1,0 +1,169 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  admin
+  team
+}
+
+enum UserStatus {
+  active
+  deactivated
+}
+
+enum ProfileStatus {
+  draft
+  pending
+  published
+}
+
+enum ProfileActivityType {
+  submitted
+  approved
+  changes_requested
+}
+
+// Mirrors a Supabase Auth user (same id). role/status here are the
+// queryable copy; role is also written to Supabase auth app_metadata
+// at creation time so proxy.ts can read it without a DB round trip.
+model User {
+  id        String     @id @default(uuid())
+  email     String     @unique
+  role      Role
+  status    UserStatus @default(active)
+  createdAt DateTime   @default(now())
+
+  teamProfile   TeamProfile?
+  invitesSent   Invite[]
+
+  @@map("users")
+}
+
+model TeamProfile {
+  id        String        @id @default(cuid())
+  userId    String        @unique
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  slug      String        @unique
+  name      String
+  roleTitle String
+  photo     String?
+  bio       String?
+  skills    String[]      @default([])
+  socials   Json?
+  status    ProfileStatus @default(draft)
+
+  // Snapshots of the editable profile content. publishedVersion is what the
+  // public site renders; pendingVersion is a draft awaiting admin review.
+  publishedVersion Json?
+  pendingVersion   Json?
+
+  // Public visibility is deliberately its own flag, not derived from
+  // `status`. A published member editing their profile flips status back
+  // to `pending` (or `draft`, on rejection) so admin can review it — but
+  // they should keep showing their last-approved content on the public
+  // site throughout that review, not disappear until the edit is
+  // re-approved. hasBeenPublished (sticky, never reset once true) plus
+  // publishedVersion is what public queries filter/render on;
+  // `status` is purely about the review workflow.
+  hasBeenPublished Boolean @default(false)
+
+  // Projects worked on. Doubling as "featured work" (reverse of this
+  // relation) keeps it admin-assigned-only by construction: only Project
+  // CRUD (admin) can add/remove entries here, never the member themselves.
+  projects Project[]
+
+  activity ProfileActivity[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("team_profiles")
+}
+
+// Simple status-change timeline for the dashboard's activity log
+// (SPEC.md Section 9) — also doubles as where an admin's "changes
+// requested" note lives, since ProfileStatus itself only has three values
+// (draft/pending/published) and a rejection just sends status back to
+// draft; the note explaining why lives here instead of a dedicated column.
+model ProfileActivity {
+  id            String              @id @default(cuid())
+  teamProfileId String
+  teamProfile   TeamProfile         @relation(fields: [teamProfileId], references: [id], onDelete: Cascade)
+  type          ProfileActivityType
+  note          String?
+  createdAt     DateTime            @default(now())
+
+  @@map("profile_activity")
+}
+
+model Service {
+  id                String   @id @default(cuid())
+  slug              String   @unique
+  title             String
+  shortDescription  String
+  icon              String?
+  fullDescription   String
+  deliverables      String[] @default([])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // relatedTeamMembers / relatedProjects are derived at query time
+  // (skill/tag overlap) rather than stored — see SPEC.md Section 5.
+
+  @@map("services")
+}
+
+model Project {
+  id          String        @id @default(cuid())
+  slug        String        @unique
+  title       String
+  description String
+  coverImage  String?
+  tags        String[]      @default([])
+  liveUrl     String?
+  teamMembers TeamProfile[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("projects")
+}
+
+model CommunityUpdate {
+  id    String   @id @default(cuid())
+  title String
+  body  String
+  date  DateTime @default(now())
+  image String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("community_updates")
+}
+
+model Invite {
+  id          String    @id @default(cuid())
+  token       String    @unique
+  email       String
+  // Intended role for the account this invite creates — Phase 6 admin UI
+  // lets the sender pick team vs admin. Doesn't retroactively change
+  // anything about how the invite→profile-review flow works for `team`;
+  // an `admin` invite just skips straight to admin access with no profile
+  // step, same as the bootstrap admin.
+  role        Role      @default(team)
+  expiresAt   DateTime
+  usedAt      DateTime?
+  revokedAt   DateTime?
+  invitedById String?
+  invitedBy   User?     @relation(fields: [invitedById], references: [id], onDelete: SetNull)
+  createdAt   DateTime  @default(now())
+
+  @@map("invites")
+}
