@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { AdminButton } from "@/components/admin/admin-button";
+import { AdminPanel } from "@/components/admin/admin-panel";
 import { DeleteRowButton } from "@/components/admin/delete-row-button";
 import { ToastFromQuery } from "@/components/ui/toast-from-query";
 import { Reveal } from "@/components/motion/reveal";
@@ -26,7 +27,7 @@ export default async function AdminServicesPage() {
         </RevealItem>
       ) : (
         <RevealItem>
-          <table className="w-full border-collapse text-sm">
+          <table className="hidden w-full border-collapse text-sm min-[640px]:table">
             <thead>
               <tr className="border-b border-[rgba(255,255,255,0.08)] text-left text-ink-dim">
                 <th className="py-2 pr-4 font-normal">Title</th>
@@ -57,6 +58,26 @@ export default async function AdminServicesPage() {
               ))}
             </tbody>
           </table>
+
+          <ul className="flex flex-col gap-3 min-[640px]:hidden">
+            {services.map((service) => (
+              <li key={service.id}>
+                <AdminPanel className="p-4">
+                  <Link href={`/admin/services/${service.id}`} className="font-display text-sm font-bold text-ink underline-offset-2 hover:underline">
+                    {service.title}
+                  </Link>
+                  <p className="mt-1 text-sm text-ink-dim">{service.shortDescription}</p>
+                  <p className="mb-3 text-sm text-ink-dim">{service.deliverables.length} deliverables</p>
+                  <div className="flex gap-3">
+                    <AdminButton href={`/admin/services/${service.id}`} variant="ghost" className="px-3 py-1 text-xs">
+                      Edit
+                    </AdminButton>
+                    <DeleteRowButton id={service.id} action={deleteServiceAction} successMessage="Service deleted." />
+                  </div>
+                </AdminPanel>
+              </li>
+            ))}
+          </ul>
         </RevealItem>
       )}
     </Reveal>

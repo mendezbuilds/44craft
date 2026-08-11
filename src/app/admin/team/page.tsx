@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { StatusBadge } from "@/components/admin/status-badge";
+import { AdminPanel } from "@/components/admin/admin-panel";
 import { Reveal } from "@/components/motion/reveal";
 import { RevealItem } from "@/components/motion/reveal-item";
 
@@ -31,7 +32,10 @@ export default async function AdminTeamPage() {
         </RevealItem>
       ) : (
         <RevealItem>
-          <table className="w-full border-collapse text-sm">
+          {/* Table on wider screens, stacked cards below 640px — same
+              reasoning as invites/page.tsx: five columns don't fit a phone
+              viewport without either scrolling or illegible squeezing. */}
+          <table className="hidden w-full border-collapse text-sm min-[640px]:table">
             <thead>
               <tr className="border-b border-[rgba(255,255,255,0.08)] text-left text-ink-dim">
                 <th className="py-2 pr-4 font-normal">Name</th>
@@ -64,6 +68,28 @@ export default async function AdminTeamPage() {
               ))}
             </tbody>
           </table>
+
+          <ul className="flex flex-col gap-3 min-[640px]:hidden">
+            {profiles.map((profile) => (
+              <li key={profile.id}>
+                <Link href={`/admin/team/${profile.id}`}>
+                  <AdminPanel glow className="p-4">
+                    <p className="mb-0.5 truncate font-display text-sm font-bold text-ink">{profile.name}</p>
+                    <p className="mb-3 truncate text-sm text-ink-dim">
+                      {profile.roleTitle} · {profile.user.email}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      <StatusBadge label={profile.status} tone={PROFILE_TONE[profile.status]} />
+                      <StatusBadge
+                        label={profile.user.status}
+                        tone={profile.user.status === "active" ? "positive" : "negative"}
+                      />
+                    </div>
+                  </AdminPanel>
+                </Link>
+              </li>
+            ))}
+          </ul>
         </RevealItem>
       )}
     </Reveal>

@@ -6,16 +6,25 @@ function isEqual(a: unknown, b: unknown) {
   return JSON.stringify(a) === JSON.stringify(b);
 }
 
+// Side-by-side before/after below 480px means each column is under ~140px
+// after padding — long names/bios wrap into an unreadable ladder. Stacked
+// below that breakpoint instead, with each block's own "Published"/
+// "Pending" label (the shared header row above only makes sense once
+// they're actually side by side).
 function TextRow({ label, before, after }: { label: string; before: string; after: string }) {
   const changed = !isEqual(before, after);
   return (
-    <div className={cn("grid grid-cols-2 gap-4 rounded-lg px-3 py-2", changed && "bg-white/[0.04]")}>
+    <div className={cn("grid grid-cols-1 gap-2 rounded-lg px-3 py-2 min-[480px]:grid-cols-2 min-[480px]:gap-4", changed && "bg-white/[0.04]")}>
       <div>
-        <p className="mb-0.5 font-mono text-[11px] tracking-wide text-ink-dim uppercase">{label}</p>
+        <p className="mb-0.5 font-mono text-[11px] tracking-wide text-ink-dim uppercase">
+          {label} <span className="min-[480px]:hidden">(published)</span>
+        </p>
         <p className={cn("text-sm", changed ? "text-ink-dim/70 line-through" : "text-ink-dim")}>{before || "—"}</p>
       </div>
       <div>
-        <p className="mb-0.5 font-mono text-[11px] tracking-wide text-ink-dim uppercase invisible">{label}</p>
+        <p className="mb-0.5 font-mono text-[11px] tracking-wide text-ink-dim uppercase min-[480px]:invisible">
+          {label} <span className="min-[480px]:hidden">(pending)</span>
+        </p>
         <p className={cn("text-sm", changed ? "font-medium text-ink" : "text-ink-dim")}>{after || "—"}</p>
       </div>
     </div>
@@ -118,7 +127,7 @@ export function ProfileDiff({ before, after }: { before: ProfileSnapshot | null;
       {!before && (
         <p className="mb-1 text-xs text-ink-dim">First submission — nothing published to compare against yet.</p>
       )}
-      <div className="mb-1 grid grid-cols-2 gap-4 px-3">
+      <div className="mb-1 hidden grid-cols-2 gap-4 px-3 min-[480px]:grid">
         <p className="font-mono text-[11px] tracking-wide text-ink-dim uppercase">Published</p>
         <p className="font-mono text-[11px] tracking-wide text-ink-dim uppercase">Pending</p>
       </div>

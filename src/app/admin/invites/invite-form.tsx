@@ -24,13 +24,13 @@ export function InviteForm() {
           name="email"
           required
           placeholder="name@example.com"
-          className={`${adminFieldClasses} w-64`}
+          className={`${adminFieldClasses} w-full min-[480px]:w-64`}
         />
       </AdminLabel>
 
       <AdminLabel>
         Role
-        <select name="role" defaultValue="team" className={`${adminFieldClasses} w-32`}>
+        <select name="role" defaultValue="team" className={`${adminFieldClasses} w-full min-[480px]:w-32`}>
           <option value="team">Team</option>
           <option value="admin">Admin</option>
         </select>

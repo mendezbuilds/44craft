@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { StatusBadge } from "@/components/admin/status-badge";
+import { AdminPanel } from "@/components/admin/admin-panel";
 import { Reveal } from "@/components/motion/reveal";
 import { RevealItem } from "@/components/motion/reveal-item";
 import { InviteForm } from "./invite-form";
@@ -34,7 +35,12 @@ export default async function InvitesPage() {
         </RevealItem>
       ) : (
         <RevealItem>
-          <table className="w-full border-collapse text-sm">
+          {/* Table on wider screens — below 640px it can't fit six columns
+              without either overflow-scrolling (worse UX than the mobile
+              app's usual card-based reflow) or squeezing text illegible,
+              so mobile gets a stacked card list instead, matching how
+              /dashboard reflows (cards/lists, no tables at all). */}
+          <table className="hidden w-full border-collapse text-sm min-[640px]:table">
             <thead>
               <tr className="border-b border-[rgba(255,255,255,0.08)] text-left text-ink-dim">
                 <th className="py-2 pr-4 font-normal">Name</th>
@@ -66,6 +72,36 @@ export default async function InvitesPage() {
               })}
             </tbody>
           </table>
+
+          <ul className="flex flex-col gap-3 min-[640px]:hidden">
+            {invites.map((invite) => {
+              const status = inviteStatus(invite);
+              const canRevoke = !invite.usedAt && !invite.revokedAt;
+              return (
+                <li key={invite.id}>
+                  <AdminPanel className="p-4">
+                    <div className="mb-2 flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="truncate font-display text-sm font-bold text-ink">
+                          {nameByEmail.get(invite.email) ?? "—"}
+                        </p>
+                        <p className="truncate text-sm text-ink-dim">{invite.email}</p>
+                      </div>
+                      <StatusBadge label={status.label} tone={status.tone} />
+                    </div>
+                    <div className="mb-3 flex items-center gap-3 text-xs text-ink-dim">
+                      <span className="capitalize">{invite.role}</span>
+                      <span>·</span>
+                      <span>
+                        {invite.createdAt.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })}
+                      </span>
+                    </div>
+                    {canRevoke && <RevokeInviteButton inviteId={invite.id} />}
+                  </AdminPanel>
+                </li>
+              );
+            })}
+          </ul>
         </RevealItem>
       )}
     </Reveal>

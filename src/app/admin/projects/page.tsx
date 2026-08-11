@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { AdminButton } from "@/components/admin/admin-button";
+import { AdminPanel } from "@/components/admin/admin-panel";
 import { DeleteRowButton } from "@/components/admin/delete-row-button";
 import { ToastFromQuery } from "@/components/ui/toast-from-query";
 import { Reveal } from "@/components/motion/reveal";
@@ -29,7 +30,7 @@ export default async function AdminProjectsPage() {
         </RevealItem>
       ) : (
         <RevealItem>
-          <table className="w-full border-collapse text-sm">
+          <table className="hidden w-full border-collapse text-sm min-[640px]:table">
             <thead>
               <tr className="border-b border-[rgba(255,255,255,0.08)] text-left text-ink-dim">
                 <th className="py-2 pr-4 font-normal">Title</th>
@@ -62,6 +63,28 @@ export default async function AdminProjectsPage() {
               ))}
             </tbody>
           </table>
+
+          <ul className="flex flex-col gap-3 min-[640px]:hidden">
+            {projects.map((project) => (
+              <li key={project.id}>
+                <AdminPanel className="p-4">
+                  <Link href={`/admin/projects/${project.id}`} className="font-display text-sm font-bold text-ink underline-offset-2 hover:underline">
+                    {project.title}
+                  </Link>
+                  <p className="mt-1 text-sm text-ink-dim">Tags: {project.tags.join(", ") || "—"}</p>
+                  <p className="mb-3 text-sm text-ink-dim">
+                    Team: {project.teamMembers.map((m) => m.name).join(", ") || "—"}
+                  </p>
+                  <div className="flex gap-3">
+                    <AdminButton href={`/admin/projects/${project.id}`} variant="ghost" className="px-3 py-1 text-xs">
+                      Edit
+                    </AdminButton>
+                    <DeleteRowButton id={project.id} action={deleteProjectAction} successMessage="Project deleted." />
+                  </div>
+                </AdminPanel>
+              </li>
+            ))}
+          </ul>
         </RevealItem>
       )}
     </Reveal>
