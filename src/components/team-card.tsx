@@ -38,17 +38,20 @@ const MAX_TILT = 8; // degrees
  * not raw motion-value writes from a pointer handler, so this checks
  * matchMedia itself rather than relying on that.
  *
- * `aspect-[3/4]` lives on this outermost wrapper specifically (not on the
- * `Link` two levels down, where it used to be) — a card sized purely by
- * `h-full` cascading through two intermediate wrapper divs with no
- * intrinsic height of their own depends on every ancestor's height being
- * definite, which CSS Grid's stretch alignment doesn't always guarantee
- * (a documented source of collapse-to-zero-height bugs, WebKit/iOS
- * especially). Establishing the aspect ratio at the very first element —
- * whose own width IS definite, from the grid column track — makes the
- * card size itself independent of how many wrappers end up around it,
- * here or wherever else it's placed (team-teaser-grid.tsx wraps it in a
- * plain height:auto motion.div of its own).
+ * Sizing: only the outermost wrapper carries `aspect-[3/4]`, and nothing
+ * else on it — no competing `h-full`. That resolves the card's height
+ * unambiguously from its own (definite, grid-track) width, no percentage
+ * chain involved. The tilt wrapper underneath is `absolute inset-0`
+ * rather than `h-full`, so it fills that resolved box directly instead of
+ * asking the browser to resolve `height:100%` against it — verified live
+ * (previous version of this fix reasoned through the CSS spec instead of
+ * actually checking a real render, and was still broken: aspect-ratio and
+ * height:100% on the same element are competing declarations, and even
+ * with that resolved, `h-full` one level down still depends on the
+ * browser treating the aspect-ratio'd box's resolved height as "definite"
+ * for percentage purposes, which isn't guaranteed inside a CSS Grid item).
+ * `inset-0` doesn't have that dependency — it's resolved against the
+ * nearest positioned ancestor's actual box, full stop.
  */
 export function TeamCard({ member }: { member: TeamCardMember }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -76,9 +79,9 @@ export function TeamCard({ member }: { member: TeamCardMember }) {
       onPointerMove={handlePointerMove}
       onPointerLeave={handlePointerLeave}
       style={{ perspective: 800 }}
-      className="aspect-[3/4] h-full"
+      className="relative aspect-[3/4]"
     >
-      <motion.div style={{ rotateX, rotateY }} className="h-full">
+      <motion.div style={{ rotateX, rotateY }} className="absolute inset-0">
         <Link
           href={`/team/${member.slug}`}
           className="team-card-glow group flex h-full flex-col overflow-hidden rounded-xl border border-[rgba(255,255,255,0.08)] transition-[border-color] duration-300 hover:border-[rgba(212,175,55,0.5)]"
