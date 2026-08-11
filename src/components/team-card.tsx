@@ -37,6 +37,18 @@ const MAX_TILT = 8; // degrees
  * in the root layout only patches Framer's own animate/variants system,
  * not raw motion-value writes from a pointer handler, so this checks
  * matchMedia itself rather than relying on that.
+ *
+ * `aspect-[3/4]` lives on this outermost wrapper specifically (not on the
+ * `Link` two levels down, where it used to be) — a card sized purely by
+ * `h-full` cascading through two intermediate wrapper divs with no
+ * intrinsic height of their own depends on every ancestor's height being
+ * definite, which CSS Grid's stretch alignment doesn't always guarantee
+ * (a documented source of collapse-to-zero-height bugs, WebKit/iOS
+ * especially). Establishing the aspect ratio at the very first element —
+ * whose own width IS definite, from the grid column track — makes the
+ * card size itself independent of how many wrappers end up around it,
+ * here or wherever else it's placed (team-teaser-grid.tsx wraps it in a
+ * plain height:auto motion.div of its own).
  */
 export function TeamCard({ member }: { member: TeamCardMember }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -64,12 +76,12 @@ export function TeamCard({ member }: { member: TeamCardMember }) {
       onPointerMove={handlePointerMove}
       onPointerLeave={handlePointerLeave}
       style={{ perspective: 800 }}
-      className="h-full"
+      className="aspect-[3/4] h-full"
     >
       <motion.div style={{ rotateX, rotateY }} className="h-full">
         <Link
           href={`/team/${member.slug}`}
-          className="team-card-glow group flex aspect-[3/4] h-full flex-col overflow-hidden rounded-xl border border-[rgba(255,255,255,0.08)] transition-[border-color] duration-300 hover:border-[rgba(212,175,55,0.5)]"
+          className="team-card-glow group flex h-full flex-col overflow-hidden rounded-xl border border-[rgba(255,255,255,0.08)] transition-[border-color] duration-300 hover:border-[rgba(212,175,55,0.5)]"
         >
           {/* Image area — a real photo once uploaded, initials placeholder until then */}
           <div className="relative flex flex-1 items-center justify-center overflow-hidden bg-gradient-to-br from-[#1a170f] to-[#0a0a08]">
@@ -78,6 +90,7 @@ export function TeamCard({ member }: { member: TeamCardMember }) {
                 src={member.photo}
                 alt=""
                 fill
+                sizes="(max-width: 600px) 50vw, (max-width: 900px) 33vw, 25vw"
                 className="object-cover transition-transform duration-500 group-hover:scale-105"
               />
             ) : (
