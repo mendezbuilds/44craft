@@ -204,24 +204,28 @@ A working HTML mockup of the navbar + hero exists (`docs/44craft-hero-mockup.htm
 7. **Contact** — inline success state on submit, no redirect.
 8. **Footer** — logo, nav, socials, copyright.
 
-### Services (`/services`, `/services/[slug]`)
+### Services (`/services`, `/services/[slug]`) — built, Phase 7
 - Index: grid of offer cards (icon, title, one-liner) → click opens detail page.
 - Detail: full description, deliverables list, "who you'd work with" (team members tagged with that skill), related past projects, CTA to contact.
+
+**Real gap found building the detail pages, flagged rather than silently worked around:** both pages read from the static `src/lib/data/services.ts` array, not the `Service` Prisma table the Phase 6 admin CRUD manages — that table has sat empty and completely disconnected from anything public since it was built. The static file has richer content (custom per-service icons, a keyword map for the skill/service matching both directions need) than an empty DB table could offer, and the index already links to these exact static slugs — switching either page to Prisma now would just 404 every link until someone re-enters all four services by hand. Reconciling this (most likely: seed the DB from the static content, then point both pages at Prisma, making the admin CRUD actually do something) is a real follow-up, not done here — Phase 7 was explicitly display-only, no admin-side/data-model changes.
 
 ### Team (`/team`, `/team/[slug]`)
 - Grid: ~10 people, simple responsive layout, staggered reveal animation on scroll ("assembling" in sequence). No filtering needed at this size.
 - Profile: photo, name, role, socials, bio, full skills as tags, featured work (linked projects, admin-assigned), services they cover (reverse-linked). If viewing your own profile while logged in: "Edit profile" button replaces the public view.
 
-### Projects (`/projects`, `/projects/[slug]`)
+### Projects (`/projects`, `/projects/[slug]`) — built, Phase 7
 - Index: cover image, title, service tags, avatar stack of team members involved.
 - Detail: banner, description, tags (→ linked service pages), "Built by" avatar row (→ linked team profiles), gallery, "Visit live site," next/prev navigation.
 
-### Community (`/community`)
+**Gallery not built:** the `Project` model has no gallery/images field (just a single `coverImage`), and adding one is a schema change — out of scope for a display-only phase. Flagged, not silently dropped; add the field (admin-side) before this can render anything.
+
+### Community (`/community`) — built, Phase 7
 Built out fully — not just a homepage mention:
-- Vision statement front and center
-- Partners showcase — Chronara AI Africa & Starmark, real depth per partner (not a logo strip)
-- Real, honestly-scaled stats
-- Join CTA (Discord/Telegram — link TBD, see open items)
+- Vision statement front and center — reuses the homepage About section's actual copy verbatim, not new marketing text
+- Partners showcase — Chronara AI Africa & Starmark, framed with the real "official, long-term partnership" language (SPEC.md Section 1); no invented specifics about what either partner actually does — that content doesn't exist yet, and guessing at it would be exactly the fabricated-content problem this project has avoided everywhere else
+- Real, honestly-scaled stats — the X follower count (Section 1) plus a live-queried published-team-member count; no invented numbers
+- Join CTA (Discord/Telegram — link TBD, see open items) — rendered as a visibly-disabled "coming soon" state, not a live-looking button pointed at a dead link
 - Updates/highlights feed — reuses the same CRUD pattern as projects/services
 
 **Explicitly deferred:** a public community member directory (separate from the team roster). Different system entirely — open signup, lighter profile schema, moderation. Not worth building until the community has grown enough to need it. Keep the `users` schema loose enough to add a `community_member` role later without a rebuild, but do not build the directory UI now.
@@ -334,5 +338,8 @@ Same branded template shell for all four (logo, dark canvas, one clear CTA butto
 - Discord/Telegram link for the community "join" CTA
 - Real content for "why work with us" stats/differentiators
 - Whether notification emails need per-user preference toggles, or are mandatory
-- Real projects to populate `/projects` at launch, or a "coming soon" state
+- Real projects to populate `/projects` at launch, or a "coming soon" state — **resolved as of Phase 7**: "coming soon" state built (same pattern as `/team`'s empty state), swaps to real content automatically the moment projects exist
 - The actual "4 Rules" behind the tagline, if worth turning into real content
+- Reconcile the `Service` Prisma table (Phase 6 admin CRUD, sits empty and disconnected) with the static `src/lib/data/services.ts` array that `/services` and `/services/[slug]` actually render from (Section 6's Services note has the full detail) — the admin service editor currently does nothing publicly visible
+- Add a gallery/images field to the `Project` model (Section 6's Projects note) — the detail page's gallery section can't be built without it
+- Real per-partner copy for Chronara AI Africa and Starmark on `/community` — currently just the generic "official, long-term partnership" framing, no specifics about what either partner actually does

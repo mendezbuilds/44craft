@@ -76,3 +76,41 @@ export function servicesForSkills(skills: string[]): Service[] {
     return lowerSkills.some((skill) => keywords.some((kw) => skill.includes(kw) || kw.includes(skill)));
   });
 }
+
+/**
+ * Inverse of servicesForSkills — given a service, which published team
+ * members would you actually work with on it. Same keyword map, just
+ * checked in the other direction (team-profile.ts's "services covered"
+ * section does the skills→services lookup; /services/[slug] needs
+ * service→team-members).
+ */
+export function teamMembersForService<T extends { skills: string[] }>(serviceSlug: string, members: T[]): T[] {
+  const keywords = SERVICE_SKILL_KEYWORDS[serviceSlug] ?? [];
+  if (keywords.length === 0) return [];
+  return members.filter((member) => {
+    const lowerSkills = member.skills.map((s) => s.toLowerCase());
+    return lowerSkills.some((skill) => keywords.some((kw) => skill.includes(kw) || kw.includes(skill)));
+  });
+}
+
+/**
+ * Project.tags is free text (admin types anything, comma-separated — see
+ * project-form.tsx), not a foreign key to a real Service row, so this is a
+ * loose match: does this tag's slugified form match a service's slug, or
+ * does it equal the service's title (case-insensitive)? Tags that don't
+ * match anything just render as plain, unlinked tags on the project page
+ * rather than guessing.
+ */
+export function serviceForTag(tag: string): Service | undefined {
+  const normalized = tag.trim().toLowerCase();
+  const slugified = normalized.replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  return services.find((s) => s.slug === slugified || s.title.toLowerCase() === normalized);
+}
+
+/**
+ * Reverse of the above — projects whose tags match this service, for the
+ * service detail page's "related past projects." Same loose matching.
+ */
+export function projectsForService<T extends { tags: string[] }>(service: Service, projects: T[]): T[] {
+  return projects.filter((project) => project.tags.some((tag) => serviceForTag(tag)?.slug === service.slug));
+}

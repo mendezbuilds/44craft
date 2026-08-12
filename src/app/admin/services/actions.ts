@@ -8,8 +8,10 @@ import { serviceSchema } from "@/lib/validation";
 
 export type ServiceFormState = { error?: string };
 
-/** One deliverable per line — matches how the public services page will
- * render them as a list (Phase 7), and is easier to type than JSON. */
+/** One deliverable per line — matches the format the static services list
+ * (src/lib/data/services.ts) renders publicly, and is easier to type than
+ * JSON. Note: this admin-entered data isn't actually connected to that
+ * public rendering yet — see the flagged gap in validation.ts. */
 function parseDeliverables(raw: FormDataEntryValue | null) {
   if (typeof raw !== "string") return [];
   return raw

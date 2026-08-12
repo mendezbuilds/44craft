@@ -5,8 +5,7 @@ import type { Service } from "@/lib/data/services";
 
 /**
  * Shared between the homepage teaser and the /services index — one card,
- * one place to change it. Links to /services/[slug], which doesn't exist
- * yet (Phase 7) and will 404 until then — expected per the Phase 3 brief.
+ * one place to change it. Links to /services/[slug] (Phase 7).
  */
 export function ServiceCard({ service }: { service: Service }) {
   return (
