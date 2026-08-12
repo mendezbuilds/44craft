@@ -8,9 +8,16 @@ import { Tag } from "@/components/ui/tag";
 import { Spinner } from "@/components/ui/spinner";
 import { useToast } from "@/components/ui/toast";
 import { uploadProfilePhotoAction, submitProfileAction } from "@/lib/team-profile-actions";
-import type { ProfileSnapshot } from "@/lib/team-profile";
+import type { ProfileSnapshot, Socials } from "@/lib/team-profile";
 
-const STEPS = ["Photo", "Name & role", "Bio", "Skills", "Featured work"] as const;
+const STEPS = ["Photo", "Name & role", "Bio", "Skills", "Socials", "Featured work"] as const;
+
+const SOCIAL_FIELDS: { key: keyof Socials; label: string; placeholder: string }[] = [
+  { key: "github", label: "GitHub", placeholder: "https://github.com/yourname" },
+  { key: "linkedin", label: "LinkedIn", placeholder: "https://linkedin.com/in/yourname" },
+  { key: "x", label: "X", placeholder: "https://x.com/yourname" },
+  { key: "website", label: "Website", placeholder: "https://yoursite.com" },
+];
 
 const inputClasses =
   "w-full rounded-[6px] border border-[rgba(255,255,255,0.16)] bg-transparent px-4 py-3 text-sm text-ink " +
@@ -20,10 +27,16 @@ const inputClasses =
 /**
  * The one guided editor used for both first-time onboarding and later edits
  * (SPEC.md Section 7/9 — "opens the same guided multi-step editor"). All
- * five steps collect into one in-memory ProfileSnapshot; nothing touches
+ * six steps collect into one in-memory ProfileSnapshot; nothing touches
  * the database until the final "Submit for review" — no per-step
  * autosave, so closing mid-wizard loses progress. Acceptable trade for
  * this phase; revisit if that turns out to matter in practice.
+ *
+ * Socials step: the data model (Socials type, profileSnapshotSchema,
+ * submitProfileAction, the admin review diff, and the public /team/[slug]
+ * page's social-links section) already fully supported this field — only
+ * the editor itself never collected it, so `form.socials` sat permanently
+ * empty for every member. Added on request.
  */
 export function ProfileEditor({ initial }: { initial: ProfileSnapshot }) {
   const router = useRouter();
@@ -39,6 +52,10 @@ export function ProfileEditor({ initial }: { initial: ProfileSnapshot }) {
 
   function update<K extends keyof ProfileSnapshot>(key: K, value: ProfileSnapshot[K]) {
     setForm((f) => ({ ...f, [key]: value }));
+  }
+
+  function updateSocial(key: keyof Socials, value: string) {
+    update("socials", { ...form.socials, [key]: value });
   }
 
   async function onPhotoSelected(file: File) {
@@ -242,6 +259,27 @@ export function ProfileEditor({ initial }: { initial: ProfileSnapshot }) {
       )}
 
       {step === 4 && (
+        <div className="flex flex-col gap-4">
+          <div>
+            <h2 className="mb-1 font-display text-lg font-bold text-ink">Socials</h2>
+            <p className="text-sm text-ink-dim">All optional — leave any of these blank.</p>
+          </div>
+          {SOCIAL_FIELDS.map(({ key, label, placeholder }) => (
+            <label key={key} className="flex flex-col gap-1.5 text-sm text-ink-dim">
+              {label}
+              <input
+                type="url"
+                value={form.socials[key] ?? ""}
+                onChange={(e) => updateSocial(key, e.target.value)}
+                placeholder={placeholder}
+                className={inputClasses}
+              />
+            </label>
+          ))}
+        </div>
+      )}
+
+      {step === 5 && (
         <div>
           <h2 className="mb-1 font-display text-lg font-bold text-ink">Featured work</h2>
           <p className="text-sm text-ink-dim">
