@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { TeamCard, type TeamCardMember } from "@/components/team-card";
+import { TeamCarousel } from "@/components/team-carousel";
 import { GoldBurst } from "@/components/motion/gold-burst";
 import { cn } from "@/lib/cn";
 
@@ -101,33 +102,53 @@ export function TeamTeaserGrid({
         </div>
       )}
 
-      {/* items-start: cards are no longer uniformly aspect-locked (see
-          team-card.tsx's sizing note), so default grid stretch would
-          force every card in a row to the tallest one's height, leaving
-          an empty gap under shorter cards' info panels. */}
       {visible.length > 0 ? (
-        <div className="grid grid-cols-2 items-start gap-6 min-[601px]:grid-cols-3 min-[901px]:grid-cols-4">
-          {visible.map((member, i) => (
-            <div key={member.slug} className="relative">
-              <GoldBurst active={bursting} size="big" />
-              <motion.div
-                initial={{ opacity: 0, y: 14, scale: 0.96 }}
-                animate={{
-                  opacity: bursting ? 0 : 1,
-                  y: 0,
-                  scale: bursting ? 0.9 : 1,
-                }}
-                transition={
-                  bursting
-                    ? { duration: 0.3, ease: "easeOut" }
-                    : { duration: 0.4, delay: i * 0.05, ease: "easeOut" }
-                }
-              >
-                <TeamCard member={member} />
-              </motion.div>
-            </div>
-          ))}
-        </div>
+        <>
+          {/* min-[601px] and up — unchanged multi-column grid + spark-burst.
+              items-start: cards are no longer uniformly aspect-locked (see
+              team-card.tsx's sizing note), so default grid stretch would
+              force every card in a row to the tallest one's height, leaving
+              an empty gap under shorter cards' info panels. */}
+          <div className="hidden items-start gap-6 min-[601px]:grid min-[601px]:grid-cols-3 min-[901px]:grid-cols-4">
+            {visible.map((member, i) => (
+              <div key={member.slug} className="relative">
+                <GoldBurst active={bursting} size="big" />
+                <motion.div
+                  initial={{ opacity: 0, y: 14, scale: 0.96 }}
+                  animate={{
+                    opacity: bursting ? 0 : 1,
+                    y: 0,
+                    scale: bursting ? 0.9 : 1,
+                  }}
+                  transition={
+                    bursting
+                      ? { duration: 0.3, ease: "easeOut" }
+                      : { duration: 0.4, delay: i * 0.05, ease: "easeOut" }
+                  }
+                >
+                  <TeamCard member={member} />
+                </motion.div>
+              </div>
+            ))}
+          </div>
+
+          {/* Below 601px — one full-width card, swipe/slide instead of a
+              cramped multi-column grid (see team-carousel.tsx). Remounted
+              (key) on filter change: a clean index-reset to the new set's
+              first slide plus a plain fade rather than trying to adapt the
+              grid's multi-card shatter/reform burst to a single visible
+              slide, where "shatter" doesn't really read as anything. */}
+          <div className="min-[601px]:hidden">
+            <motion.div
+              key={activeSkill ?? "all"}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
+            >
+              <TeamCarousel members={visible} />
+            </motion.div>
+          </div>
+        </>
       ) : (
         <p className="text-sm text-ink-dim">No team members with that skill yet.</p>
       )}

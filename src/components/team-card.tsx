@@ -6,6 +6,7 @@ import Link from "next/link";
 import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { Tag } from "@/components/ui/tag";
 import { initials } from "@/lib/initials";
+import type { Socials } from "@/lib/team-profile";
 
 export type TeamCardMember = {
   slug: string;
@@ -13,6 +14,10 @@ export type TeamCardMember = {
   roleTitle: string;
   photo: string | null;
   skills: string[];
+  // Optional — only team-card-compact.tsx (the mobile teaser carousel)
+  // actually renders these; the desktop grid card doesn't show socials at
+  // all, so most call sites can leave this off.
+  socials?: Socials;
 };
 
 const MAX_TILT = 8; // degrees

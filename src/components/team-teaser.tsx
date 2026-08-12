@@ -31,6 +31,7 @@ export async function TeamTeaser() {
     roleTitle: profile.roleTitle,
     photo: profile.photo,
     skills: profile.skills,
+    socials: profile.socials,
   }));
   const featured = members.slice(0, 8);
 
