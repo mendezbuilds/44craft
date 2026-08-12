@@ -62,7 +62,13 @@ export function ProjectForm({
 
       <AdminLabel>
         Cover image URL
-        <input name="coverImage" defaultValue={defaultValues.coverImage} className={adminFieldClasses} placeholder="https://…" />
+        <input
+          name="coverImage"
+          defaultValue={defaultValues.coverImage}
+          className={adminFieldClasses}
+          placeholder="https://<project>.supabase.co/storage/v1/object/public/…"
+        />
+        <span className="text-xs text-ink-dim">Upload to Supabase Storage first, then paste the public URL — other hosts aren&apos;t accepted.</span>
       </AdminLabel>
 
       <AdminLabel>
@@ -71,9 +77,10 @@ export function ProjectForm({
           name="gallery"
           rows={4}
           defaultValue={defaultValues.gallery.join("\n")}
-          placeholder={"https://…\nhttps://…"}
+          placeholder={"https://<project>.supabase.co/storage/v1/object/public/…\nhttps://<project>.supabase.co/storage/v1/object/public/…"}
           className={`${adminFieldClasses} resize-none`}
         />
+        <span className="text-xs text-ink-dim">Same as cover image — Supabase Storage URLs only.</span>
       </AdminLabel>
 
       <AdminLabel>

@@ -220,7 +220,9 @@ A working HTML mockup of the navbar + hero exists (`docs/44craft-hero-mockup.htm
 
 **Resolved (follow-up after Phase 7):** `Project.gallery` (`String[]`, migration `20260812092821_add_project_gallery`) — same "array of pasted URLs" pattern as `tags`, editable via a one-URL-per-line textarea in the admin form. The detail page only renders the section when `gallery.length > 0`; a project without one just doesn't show it, no empty placeholder grid.
 
-**Known limitation carried over, not fixed here:** `next.config.ts`'s image allowlist only covers the Supabase Storage host — a gallery/cover/community-update image URL pasted from anywhere else would throw a runtime error via `next/image`, not just fail to load. Widening the allowlist (e.g. to any `https` host) has a real security tradeoff (the image-optimization proxy becomes a fetch-anything vector) that deserves an explicit decision, not a unilateral fix bundled into an unrelated change.
+**Decided:** `next.config.ts`'s image allowlist stays restricted to the Supabase Storage host — not widened, on request. The workflow for a gallery/cover/community-update image is upload-to-Supabase-first, paste-the-resulting-URL-second, not paste-any-URL. Enforced at the form level, not just documented: `coverImage`/`gallery`/`image` in `src/lib/validation.ts` now reject a non-Supabase-hostname URL with a clear message before it ever saves, rather than saving silently and only failing later as a runtime crash on the public page. Admin form fields (`project-form.tsx`, `community-form.tsx`) hint at the expected URL shape.
+
+**Real gap this surfaced:** there's no dedicated Storage bucket or upload UI for these images — only `team-photos` exists, with its own self-service upload flow (`uploadProfilePhotoAction`). Right now an admin has to create a bucket and upload through the Supabase dashboard directly, or improvise by reusing `team-photos`. A real project/community image bucket + an upload button matching the profile-photo pattern is the natural next step, not built here.
 
 ### Community (`/community`) — built, Phase 7
 Built out fully — not just a homepage mention:
@@ -344,5 +346,5 @@ Same branded template shell for all four (logo, dark canvas, one clear CTA butto
 - The actual "4 Rules" behind the tagline, if worth turning into real content
 - ~~Reconcile the `Service` Prisma table with the static services file~~ — **resolved**, see Section 6's Services note
 - ~~Add a gallery/images field to the `Project` model~~ — **resolved**, see Section 6's Projects note
-- Widen `next.config.ts`'s image host allowlist beyond Supabase Storage (Section 6's Projects note) — needs an explicit call given the security tradeoff, not a quiet default change
+- ~~Widen `next.config.ts`'s image host allowlist~~ — **decided against**, see Section 6's Projects note. What's still open: a real Storage bucket + upload UI for project/community images (currently a manual Supabase-dashboard workflow, no self-service upload like team photos have)
 - Real per-partner copy for Chronara AI Africa and Starmark on `/community` — currently just the generic "official, long-term partnership" framing, no specifics about what either partner actually does

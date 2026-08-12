@@ -54,7 +54,13 @@ export function CommunityForm({
 
       <AdminLabel>
         Image URL (optional)
-        <input name="image" defaultValue={defaultValues.image} className={adminFieldClasses} placeholder="https://…" />
+        <input
+          name="image"
+          defaultValue={defaultValues.image}
+          className={adminFieldClasses}
+          placeholder="https://<project>.supabase.co/storage/v1/object/public/…"
+        />
+        <span className="text-xs text-ink-dim">Upload to Supabase Storage first, then paste the public URL — other hosts aren&apos;t accepted.</span>
       </AdminLabel>
 
       <div>

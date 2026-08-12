@@ -70,6 +70,37 @@ export const rejectProfileSchema = z.object({
 // scripts/migrate-services-to-db.ts).
 const optionalUrl = z.string().trim().url().optional().or(z.literal(""));
 
+// next.config.ts's image allowlist only covers the Supabase Storage
+// host, by design — kept that way on request rather than widened, since
+// an open allowlist turns next/image's optimization proxy into a
+// fetch-almost-anything vector. Any image next/image actually renders
+// (Project.coverImage/gallery, CommunityUpdate.image) has to come from
+// that host: upload to Supabase Storage first, then paste the resulting
+// public URL — not paste any image URL. Checked here so a bad paste is a
+// clear, immediate validation error in the admin form, not a runtime
+// crash discovered later on the public page. Team profile photos don't
+// need this check: they're never manually pasted, only ever produced by
+// the real upload flow (uploadProfilePhotoAction), which already only
+// writes real Storage URLs.
+function isSupabaseStorageUrl(value: string): boolean {
+  if (!z.string().url().safeParse(value).success) return false;
+  const configuredHost = process.env.NEXT_PUBLIC_SUPABASE_URL
+    ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).hostname
+    : undefined;
+  if (!configuredHost) return true; // Supabase not configured (e.g. this env) — nothing to check against
+  return new URL(value).hostname === configuredHost;
+}
+
+const SUPABASE_URL_MESSAGE =
+  "Must be a Supabase Storage URL — upload the image to Supabase Storage first, then paste the public URL here.";
+
+const optionalSupabaseImageUrl = z
+  .string()
+  .trim()
+  .refine((v) => v === "" || isSupabaseStorageUrl(v), SUPABASE_URL_MESSAGE);
+
+const requiredSupabaseImageUrl = z.string().trim().refine(isSupabaseStorageUrl, SUPABASE_URL_MESSAGE);
+
 export const serviceSchema = z.object({
   slug: z.string().trim().min(1, "Slug is required").max(60),
   title: z.string().trim().min(1, "Title is required").max(80),
@@ -83,10 +114,10 @@ export const projectSchema = z.object({
   slug: z.string().trim().min(1, "Slug is required").max(60),
   title: z.string().trim().min(1, "Title is required").max(80),
   description: z.string().trim().min(1, "Description is required"),
-  coverImage: optionalUrl,
-  gallery: z.array(z.string().trim().url()).max(20),
+  coverImage: optionalSupabaseImageUrl,
+  gallery: z.array(requiredSupabaseImageUrl).max(20),
   tags: z.array(z.string().trim().min(1)).max(20),
-  liveUrl: optionalUrl,
+  liveUrl: optionalUrl, // external project link, not rendered via next/image — no host restriction
   teamMemberIds: z.array(z.string()).max(50),
 });
 
@@ -94,5 +125,5 @@ export const communityUpdateSchema = z.object({
   title: z.string().trim().min(1, "Title is required").max(120),
   body: z.string().trim().min(1, "Body is required"),
   date: z.string().trim().min(1, "Date is required"),
-  image: optionalUrl,
+  image: optionalSupabaseImageUrl,
 });
