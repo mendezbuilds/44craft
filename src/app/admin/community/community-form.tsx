@@ -78,45 +78,52 @@ export function CommunityForm({
         />
       </AdminLabel>
 
-      <AdminLabel>
-        Image URL (optional)
-        <input
-          name="image"
-          value={image}
-          onChange={(e) => setImage(e.target.value)}
-          className={adminFieldClasses}
-          placeholder="https://<project>.supabase.co/storage/v1/object/public/…"
-        />
-        <div className="flex items-center gap-3">
+      {/* Hint lives outside the <label> (aria-describedby, not nested
+          text) — see project-form.tsx's identical note on this. */}
+      <div className="flex flex-col gap-1.5">
+        <AdminLabel>
+          Image URL (optional)
           <input
-            ref={fileInputRef}
-            type="file"
-            accept={IMAGE_ACCEPT}
-            className="hidden"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) onImageSelected(file);
-              e.target.value = "";
-            }}
+            name="image"
+            value={image}
+            onChange={(e) => setImage(e.target.value)}
+            className={adminFieldClasses}
+            placeholder="https://<project>.supabase.co/storage/v1/object/public/…"
+            aria-describedby="image-hint"
           />
-          <AdminButton
-            type="button"
-            variant="ghost"
-            disabled={uploading}
-            onClick={() => fileInputRef.current?.click()}
-            className="gap-2 px-3 py-1 text-xs"
-          >
-            {uploading && <Spinner className="h-3 w-3" />}
-            {uploading ? "Uploading…" : "Upload image"}
-          </AdminButton>
-          {image && (
-            <div className="relative h-10 w-14 shrink-0 overflow-hidden rounded-[4px] border border-[rgba(255,255,255,0.14)] bg-[#141310]">
-              <Image src={image} alt="" fill className="object-cover" />
-            </div>
-          )}
-        </div>
-        <span className="text-xs text-ink-dim">Upload an image, or paste a Supabase Storage URL directly.</span>
-      </AdminLabel>
+          <div className="flex items-center gap-3">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept={IMAGE_ACCEPT}
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) onImageSelected(file);
+                e.target.value = "";
+              }}
+            />
+            <AdminButton
+              type="button"
+              variant="ghost"
+              disabled={uploading}
+              onClick={() => fileInputRef.current?.click()}
+              className="gap-2 px-3 py-1 text-xs"
+            >
+              {uploading && <Spinner className="h-3 w-3" />}
+              {uploading ? "Uploading…" : "Upload image"}
+            </AdminButton>
+            {image && (
+              <div className="relative h-10 w-14 shrink-0 overflow-hidden rounded-[4px] border border-[rgba(255,255,255,0.14)] bg-[#141310]">
+                <Image src={image} alt="" fill className="object-cover" />
+              </div>
+            )}
+          </div>
+        </AdminLabel>
+        <span id="image-hint" className="text-xs text-ink-dim">
+          Upload an image, or paste a Supabase Storage URL directly.
+        </span>
+      </div>
 
       <div>
         <AdminButton type="submit" variant="primary" disabled={pending} className="gap-2">

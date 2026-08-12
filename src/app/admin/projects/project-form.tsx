@@ -119,84 +119,98 @@ export function ProjectForm({
         />
       </AdminLabel>
 
-      <AdminLabel>
-        Cover image URL
-        <input
-          name="coverImage"
-          value={coverImage}
-          onChange={(e) => setCoverImage(e.target.value)}
-          className={adminFieldClasses}
-          placeholder="https://<project>.supabase.co/storage/v1/object/public/…"
-        />
-        <div className="flex items-center gap-3">
+      {/* Hint lives outside the <label> (aria-describedby, not nested
+          text) — a label's accessible name concatenates all of its text
+          content, including nested elements, so a full sentence of
+          helper text in there made "Cover image URL" balloon into a
+          much longer, more verbose announced name than the field
+          actually needed. */}
+      <div className="flex flex-col gap-1.5">
+        <AdminLabel>
+          Cover image URL
           <input
-            ref={coverInputRef}
-            type="file"
-            accept={IMAGE_ACCEPT}
-            className="hidden"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) onCoverSelected(file);
-              e.target.value = ""; // lets the same file be re-selected later
-            }}
+            name="coverImage"
+            value={coverImage}
+            onChange={(e) => setCoverImage(e.target.value)}
+            className={adminFieldClasses}
+            placeholder="https://<project>.supabase.co/storage/v1/object/public/…"
+            aria-describedby="coverImage-hint"
           />
-          <AdminButton
-            type="button"
-            variant="ghost"
-            disabled={uploadingCover}
-            onClick={() => coverInputRef.current?.click()}
-            className="gap-2 px-3 py-1 text-xs"
-          >
-            {uploadingCover && <Spinner className="h-3 w-3" />}
-            {uploadingCover ? "Uploading…" : "Upload image"}
-          </AdminButton>
-          {coverImage && (
-            <div className="relative h-10 w-14 shrink-0 overflow-hidden rounded-[4px] border border-[rgba(255,255,255,0.14)] bg-[#141310]">
-              <Image src={coverImage} alt="" fill className="object-cover" />
-            </div>
-          )}
-        </div>
-        <span className="text-xs text-ink-dim">Upload an image, or paste a Supabase Storage URL directly.</span>
-      </AdminLabel>
+          <div className="flex items-center gap-3">
+            <input
+              ref={coverInputRef}
+              type="file"
+              accept={IMAGE_ACCEPT}
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) onCoverSelected(file);
+                e.target.value = ""; // lets the same file be re-selected later
+              }}
+            />
+            <AdminButton
+              type="button"
+              variant="ghost"
+              disabled={uploadingCover}
+              onClick={() => coverInputRef.current?.click()}
+              className="gap-2 px-3 py-1 text-xs"
+            >
+              {uploadingCover && <Spinner className="h-3 w-3" />}
+              {uploadingCover ? "Uploading…" : "Upload image"}
+            </AdminButton>
+            {coverImage && (
+              <div className="relative h-10 w-14 shrink-0 overflow-hidden rounded-[4px] border border-[rgba(255,255,255,0.14)] bg-[#141310]">
+                <Image src={coverImage} alt="" fill className="object-cover" />
+              </div>
+            )}
+          </div>
+        </AdminLabel>
+        <span id="coverImage-hint" className="text-xs text-ink-dim">
+          Upload an image, or paste a Supabase Storage URL directly.
+        </span>
+      </div>
 
-      <AdminLabel>
-        Gallery (one image URL per line, optional)
-        <textarea
-          name="gallery"
-          rows={4}
-          value={galleryText}
-          onChange={(e) => setGalleryText(e.target.value)}
-          placeholder={"https://<project>.supabase.co/storage/v1/object/public/…\nhttps://<project>.supabase.co/storage/v1/object/public/…"}
-          className={`${adminFieldClasses} resize-none`}
-        />
-        <div className="flex items-center gap-3">
-          <input
-            ref={galleryInputRef}
-            type="file"
-            accept={IMAGE_ACCEPT}
-            multiple
-            className="hidden"
-            onChange={(e) => {
-              const files = e.target.files;
-              if (files && files.length > 0) onGalleryFilesSelected(files);
-              e.target.value = "";
-            }}
+      <div className="flex flex-col gap-1.5">
+        <AdminLabel>
+          Gallery (one image URL per line, optional)
+          <textarea
+            name="gallery"
+            rows={4}
+            value={galleryText}
+            onChange={(e) => setGalleryText(e.target.value)}
+            placeholder={"https://<project>.supabase.co/storage/v1/object/public/…\nhttps://<project>.supabase.co/storage/v1/object/public/…"}
+            className={`${adminFieldClasses} resize-none`}
+            aria-describedby="gallery-hint"
           />
-          <AdminButton
-            type="button"
-            variant="ghost"
-            disabled={uploadingGallery}
-            onClick={() => galleryInputRef.current?.click()}
-            className="gap-2 px-3 py-1 text-xs"
-          >
-            {uploadingGallery && <Spinner className="h-3 w-3" />}
-            {uploadingGallery ? "Uploading…" : "Add images"}
-          </AdminButton>
-        </div>
-        <span className="text-xs text-ink-dim">
+          <div className="flex items-center gap-3">
+            <input
+              ref={galleryInputRef}
+              type="file"
+              accept={IMAGE_ACCEPT}
+              multiple
+              className="hidden"
+              onChange={(e) => {
+                const files = e.target.files;
+                if (files && files.length > 0) onGalleryFilesSelected(files);
+                e.target.value = "";
+              }}
+            />
+            <AdminButton
+              type="button"
+              variant="ghost"
+              disabled={uploadingGallery}
+              onClick={() => galleryInputRef.current?.click()}
+              className="gap-2 px-3 py-1 text-xs"
+            >
+              {uploadingGallery && <Spinner className="h-3 w-3" />}
+              {uploadingGallery ? "Uploading…" : "Add images"}
+            </AdminButton>
+          </div>
+        </AdminLabel>
+        <span id="gallery-hint" className="text-xs text-ink-dim">
           Upload one or more images (adds to the list above), or paste Supabase Storage URLs directly.
         </span>
-      </AdminLabel>
+      </div>
 
       <AdminLabel>
         Live URL
