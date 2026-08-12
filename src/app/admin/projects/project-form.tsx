@@ -1,9 +1,13 @@
 "use client";
 
+import { useRef, useState } from "react";
+import Image from "next/image";
 import { AdminButton } from "@/components/admin/admin-button";
 import { adminFieldClasses, AdminLabel } from "@/components/admin/admin-field";
 import { Spinner } from "@/components/ui/spinner";
+import { useToast } from "@/components/ui/toast";
 import { useToastAction } from "@/lib/use-toast-action";
+import { uploadProjectCoverAction, uploadProjectGalleryImageAction } from "./actions";
 import type { ProjectFormState } from "./actions";
 
 type TeamOption = { id: string; name: string };
@@ -21,7 +25,17 @@ type ProjectFormValues = {
 };
 
 const initialState: ProjectFormState = {};
+const IMAGE_ACCEPT = "image/png,image/jpeg,image/webp,image/gif";
 
+/**
+ * Cover image and gallery are controlled (everything else in this form
+ * stays uncontrolled/defaultValue, submitted via the plain <form action>)
+ * specifically so the upload buttons have somewhere to write the
+ * resulting Supabase Storage URL back to. The text fields underneath
+ * stay visible and editable, not replaced by the upload button — someone
+ * who already has a Storage URL from elsewhere can still paste it
+ * directly, same fallback that existed before this.
+ */
 export function ProjectForm({
   action,
   defaultValues,
@@ -34,6 +48,51 @@ export function ProjectForm({
   submitLabel: string;
 }) {
   const [state, formAction, pending] = useToastAction(action, initialState);
+  const { push } = useToast();
+
+  const [coverImage, setCoverImage] = useState(defaultValues.coverImage);
+  const [galleryText, setGalleryText] = useState(defaultValues.gallery.join("\n"));
+  const [uploadingCover, setUploadingCover] = useState(false);
+  const [uploadingGallery, setUploadingGallery] = useState(false);
+  const coverInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
+
+  async function onCoverSelected(file: File) {
+    setUploadingCover(true);
+    const formData = new FormData();
+    formData.set("file", file);
+    const result = await uploadProjectCoverAction(formData);
+    setUploadingCover(false);
+    if (result.error) {
+      push({ type: "error", message: result.error });
+      return;
+    }
+    if (result.url) {
+      setCoverImage(result.url);
+      push({ type: "success", message: "Cover image uploaded." });
+    }
+  }
+
+  async function onGalleryFilesSelected(files: FileList) {
+    setUploadingGallery(true);
+    const uploaded: string[] = [];
+    let errorCount = 0;
+    for (const file of Array.from(files)) {
+      const formData = new FormData();
+      formData.set("file", file);
+      const result = await uploadProjectGalleryImageAction(formData);
+      if (result.url) uploaded.push(result.url);
+      if (result.error) errorCount++;
+    }
+    setUploadingGallery(false);
+    if (uploaded.length > 0) {
+      setGalleryText((prev) => (prev.trim() ? `${prev.trimEnd()}\n${uploaded.join("\n")}` : uploaded.join("\n")));
+      push({ type: "success", message: `${uploaded.length} image${uploaded.length === 1 ? "" : "s"} uploaded.` });
+    }
+    if (errorCount > 0) {
+      push({ type: "error", message: `${errorCount} image${errorCount === 1 ? "" : "s"} failed to upload.` });
+    }
+  }
 
   return (
     <form action={formAction} className="flex max-w-xl flex-col gap-4">
@@ -64,11 +123,40 @@ export function ProjectForm({
         Cover image URL
         <input
           name="coverImage"
-          defaultValue={defaultValues.coverImage}
+          value={coverImage}
+          onChange={(e) => setCoverImage(e.target.value)}
           className={adminFieldClasses}
           placeholder="https://<project>.supabase.co/storage/v1/object/public/…"
         />
-        <span className="text-xs text-ink-dim">Upload to Supabase Storage first, then paste the public URL — other hosts aren&apos;t accepted.</span>
+        <div className="flex items-center gap-3">
+          <input
+            ref={coverInputRef}
+            type="file"
+            accept={IMAGE_ACCEPT}
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) onCoverSelected(file);
+              e.target.value = ""; // lets the same file be re-selected later
+            }}
+          />
+          <AdminButton
+            type="button"
+            variant="ghost"
+            disabled={uploadingCover}
+            onClick={() => coverInputRef.current?.click()}
+            className="gap-2 px-3 py-1 text-xs"
+          >
+            {uploadingCover && <Spinner className="h-3 w-3" />}
+            {uploadingCover ? "Uploading…" : "Upload image"}
+          </AdminButton>
+          {coverImage && (
+            <div className="relative h-10 w-14 shrink-0 overflow-hidden rounded-[4px] border border-[rgba(255,255,255,0.14)] bg-[#141310]">
+              <Image src={coverImage} alt="" fill className="object-cover" />
+            </div>
+          )}
+        </div>
+        <span className="text-xs text-ink-dim">Upload an image, or paste a Supabase Storage URL directly.</span>
       </AdminLabel>
 
       <AdminLabel>
@@ -76,11 +164,38 @@ export function ProjectForm({
         <textarea
           name="gallery"
           rows={4}
-          defaultValue={defaultValues.gallery.join("\n")}
+          value={galleryText}
+          onChange={(e) => setGalleryText(e.target.value)}
           placeholder={"https://<project>.supabase.co/storage/v1/object/public/…\nhttps://<project>.supabase.co/storage/v1/object/public/…"}
           className={`${adminFieldClasses} resize-none`}
         />
-        <span className="text-xs text-ink-dim">Same as cover image — Supabase Storage URLs only.</span>
+        <div className="flex items-center gap-3">
+          <input
+            ref={galleryInputRef}
+            type="file"
+            accept={IMAGE_ACCEPT}
+            multiple
+            className="hidden"
+            onChange={(e) => {
+              const files = e.target.files;
+              if (files && files.length > 0) onGalleryFilesSelected(files);
+              e.target.value = "";
+            }}
+          />
+          <AdminButton
+            type="button"
+            variant="ghost"
+            disabled={uploadingGallery}
+            onClick={() => galleryInputRef.current?.click()}
+            className="gap-2 px-3 py-1 text-xs"
+          >
+            {uploadingGallery && <Spinner className="h-3 w-3" />}
+            {uploadingGallery ? "Uploading…" : "Add images"}
+          </AdminButton>
+        </div>
+        <span className="text-xs text-ink-dim">
+          Upload one or more images (adds to the list above), or paste Supabase Storage URLs directly.
+        </span>
       </AdminLabel>
 
       <AdminLabel>

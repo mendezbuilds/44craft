@@ -5,8 +5,18 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
 import { communityUpdateSchema } from "@/lib/validation";
+import { uploadImage, COMMUNITY_IMAGES_BUCKET, type UploadImageState } from "@/lib/storage";
 
 export type CommunityFormState = { error?: string };
+
+/** Same reasoning as the project cover/gallery upload actions — see
+ * their comment in admin/projects/actions.ts. */
+export async function uploadCommunityImageAction(formData: FormData): Promise<UploadImageState> {
+  await requireAdmin();
+  const file = formData.get("file");
+  if (!(file instanceof File)) return { error: "Choose an image file." };
+  return uploadImage(COMMUNITY_IMAGES_BUCKET, "updates", file);
+}
 
 function parseCommunityForm(formData: FormData) {
   return communityUpdateSchema.safeParse({

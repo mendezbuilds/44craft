@@ -7,10 +7,34 @@ import { requireAdmin } from "@/lib/auth";
 import { resend, EMAIL_FROM } from "@/lib/resend";
 import { emailShell } from "@/lib/email-template";
 import { projectSchema } from "@/lib/validation";
+import { uploadImage, PROJECT_IMAGES_BUCKET, type UploadImageState } from "@/lib/storage";
 
 export type ProjectFormState = { error?: string };
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://44craft.com";
+
+/**
+ * Two upload points (cover, gallery) sharing one bucket under different
+ * path prefixes for organization — same uploadImage() call either way,
+ * same reasoning as team-profile-actions.ts's uploadProfilePhotoAction:
+ * service-role upload rather than a browser-direct one with Storage RLS
+ * policies, simpler to get right, and this is already how every
+ * privileged write in this app goes through a re-checked requireAdmin()
+ * server action.
+ */
+export async function uploadProjectCoverAction(formData: FormData): Promise<UploadImageState> {
+  await requireAdmin();
+  const file = formData.get("file");
+  if (!(file instanceof File)) return { error: "Choose an image file." };
+  return uploadImage(PROJECT_IMAGES_BUCKET, "covers", file);
+}
+
+export async function uploadProjectGalleryImageAction(formData: FormData): Promise<UploadImageState> {
+  await requireAdmin();
+  const file = formData.get("file");
+  if (!(file instanceof File)) return { error: "Choose an image file." };
+  return uploadImage(PROJECT_IMAGES_BUCKET, "gallery", file);
+}
 
 /**
  * SPEC.md Section 10's fourth trigger — "Featured in a project" — never
