@@ -125,6 +125,12 @@ model Project {
   title       String
   description String
   coverImage  String?
+  // Screenshot/image set for the detail page's gallery section — separate
+  // from coverImage (the banner shown on the card and detail page header).
+  // Same "array of URLs, admin pastes them" pattern as `tags`, not a
+  // Storage upload flow — matches how coverImage itself is just a pasted
+  // URL, not an upload widget.
+  gallery     String[]      @default([])
   tags        String[]      @default([])
   liveUrl     String?
   teamMembers TeamProfile[]

@@ -19,7 +19,16 @@ export default async function NewProjectPage() {
       <h1 className="font-display text-xl font-bold text-ink">New project</h1>
       <ProjectForm
         action={createProjectAction}
-        defaultValues={{ slug: "", title: "", description: "", coverImage: "", tags: [], liveUrl: "", teamMemberIds: [] }}
+        defaultValues={{
+          slug: "",
+          title: "",
+          description: "",
+          coverImage: "",
+          gallery: [],
+          tags: [],
+          liveUrl: "",
+          teamMemberIds: [],
+        }}
         teamOptions={teamOptions}
         submitLabel="Create project"
       />

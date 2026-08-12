@@ -4,9 +4,11 @@ import { DiamondMark } from "@/components/icons/diamond-mark";
 import { ServiceCard } from "@/components/service-card";
 import { Reveal } from "@/components/motion/reveal";
 import { RevealItem } from "@/components/motion/reveal-item";
-import { services } from "@/lib/data/services";
+import { getAllServices } from "@/lib/services";
 
-export function ServicesTeaser() {
+export async function ServicesTeaser() {
+  const services = await getAllServices();
+
   return (
     <Section id="services" className="relative overflow-hidden py-24 min-[901px]:py-32">
       
@@ -35,20 +37,27 @@ export function ServicesTeaser() {
             </Link>
           </RevealItem>
 
-          {/* Staggered Bento Grid */}
-          <div className="grid gap-6 min-[601px]:grid-cols-2 min-[901px]:gap-12 relative">
-            {/* Connecting center line */}
-            <div className="absolute left-1/2 top-[10%] bottom-[10%] hidden w-[1px] -translate-x-1/2 bg-gradient-to-b from-transparent via-[#d4af37]/20 to-transparent min-[901px]:block" />
-            
-            {services.map((service, index) => (
-              <RevealItem 
-                key={service.slug}
-                className={index % 2 !== 0 ? "min-[901px]:mt-32" : ""}
-              >
-                <ServiceCard service={service} />
-              </RevealItem>
-            ))}
-          </div>
+          {/* Now DB-backed — could genuinely be empty if an admin cleared
+              the table, same reasoning as /services' own empty state. */}
+          {services.length > 0 ? (
+            <div className="grid gap-6 min-[601px]:grid-cols-2 min-[901px]:gap-12 relative">
+              {/* Connecting center line */}
+              <div className="absolute left-1/2 top-[10%] bottom-[10%] hidden w-[1px] -translate-x-1/2 bg-gradient-to-b from-transparent via-[#d4af37]/20 to-transparent min-[901px]:block" />
+
+              {services.map((service, index) => (
+                <RevealItem
+                  key={service.slug}
+                  className={index % 2 !== 0 ? "min-[901px]:mt-32" : ""}
+                >
+                  <ServiceCard service={service} />
+                </RevealItem>
+              ))}
+            </div>
+          ) : (
+            <RevealItem>
+              <p className="text-sm text-ink-dim">Services coming soon.</p>
+            </RevealItem>
+          )}
         </Reveal>
       </div>
     </Section>

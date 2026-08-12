@@ -51,12 +51,25 @@ function parseTags(raw: FormDataEntryValue | null) {
   return [...new Set(raw.split(",").map((t) => t.trim()).filter(Boolean))];
 }
 
+/** One URL per line — same pattern as deliverables (services) and body
+ * text elsewhere, easier to type/paste than a JSON array or a real
+ * upload flow. Empty lines dropped, no dedup (unlike tags, a gallery can
+ * legitimately reuse a URL). */
+function parseGallery(raw: FormDataEntryValue | null) {
+  if (typeof raw !== "string") return [];
+  return raw
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+}
+
 function parseProjectForm(formData: FormData) {
   return projectSchema.safeParse({
     slug: formData.get("slug"),
     title: formData.get("title"),
     description: formData.get("description"),
     coverImage: formData.get("coverImage") ?? "",
+    gallery: parseGallery(formData.get("gallery")),
     tags: parseTags(formData.get("tags")),
     liveUrl: formData.get("liveUrl") ?? "",
     teamMemberIds: formData.getAll("teamMemberIds").filter((v): v is string => typeof v === "string"),
@@ -88,6 +101,15 @@ export async function createProjectAction(
 
   revalidatePath("/admin/projects");
   revalidatePath("/admin");
+  // Public pages too — Project has no review workflow, this is
+  // immediately live, so the cached /projects index and this project's
+  // own detail page need invalidating same as admin's own list does.
+  // (Found missing here the same way it was found missing for Service:
+  // the pages simply didn't exist yet when this action was first
+  // written — flagging, not silently carrying the gap forward now that
+  // it does.)
+  revalidatePath("/projects");
+  revalidatePath(`/projects/${rest.slug}`);
   // Brand new project — every connected member is newly featured by
   // definition, no diffing needed (contrast updateProjectAction below).
   await notifyFeatured(teamMemberIds, rest.title, rest.slug);
@@ -118,9 +140,12 @@ export async function updateProjectAction(
   // above only returns a row when that slug is taken, which isn't
   // guaranteed if the admin changed it) — diffed against the incoming
   // list so only newly-added members get notified below, not everyone
-  // who was already on the project.
-  const before = await prisma.teamProfile.findMany({ where: { projects: { some: { id } } }, select: { id: true } });
-  const beforeIds = new Set(before.map((m) => m.id));
+  // who was already on the project. Also grabs the current slug, in case
+  // this edit changes it — the old detail page's cache needs invalidating
+  // too, not just the new one.
+  const current = await prisma.teamProfile.findMany({ where: { projects: { some: { id } } }, select: { id: true } });
+  const currentProject = await prisma.project.findUnique({ where: { id }, select: { slug: true } });
+  const beforeIds = new Set(current.map((m) => m.id));
   const newlyAdded = teamMemberIds.filter((mid) => !beforeIds.has(mid));
 
   await prisma.project.update({
@@ -134,6 +159,11 @@ export async function updateProjectAction(
   });
 
   revalidatePath("/admin/projects");
+  revalidatePath("/projects");
+  revalidatePath(`/projects/${rest.slug}`);
+  if (currentProject && currentProject.slug !== rest.slug) {
+    revalidatePath(`/projects/${currentProject.slug}`);
+  }
   // Only whoever's newly on the project — re-saving with the same roster
   // (or removing someone) shouldn't re-notify everyone who was already
   // there.
@@ -151,9 +181,11 @@ export async function deleteProjectAction(
   const id = formData.get("id");
   if (typeof id !== "string") return { error: "Missing project id." };
 
-  await prisma.project.delete({ where: { id } });
+  const deleted = await prisma.project.delete({ where: { id } });
 
   revalidatePath("/admin/projects");
   revalidatePath("/admin");
+  revalidatePath("/projects");
+  revalidatePath(`/projects/${deleted.slug}`);
   return { success: "Project deleted." };
 }

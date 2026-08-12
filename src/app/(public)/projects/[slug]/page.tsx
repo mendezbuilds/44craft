@@ -9,7 +9,7 @@ import { AvatarStack } from "@/components/avatar-stack";
 import { Reveal } from "@/components/motion/reveal";
 import { RevealItem } from "@/components/motion/reveal-item";
 import { getAllProjects, getProjectBySlug } from "@/lib/projects";
-import { serviceForTag } from "@/lib/data/services";
+import { serviceForTag, getAllServices } from "@/lib/services";
 
 export async function generateMetadata({
   params,
@@ -32,6 +32,8 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
   const index = all.findIndex((p) => p.slug === slug);
   const prev = index > 0 ? all[index - 1] : null;
   const next = index < all.length - 1 ? all[index + 1] : null;
+
+  const allServices = await getAllServices();
 
   return (
     <Section className="py-24 min-[901px]:py-32">
@@ -64,7 +66,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
             {project.tags.length > 0 && (
               <RevealItem className="mt-8 flex flex-wrap gap-2">
                 {project.tags.map((tag) => {
-                  const service = serviceForTag(tag);
+                  const service = serviceForTag(tag, allServices);
                   return service ? (
                     <Link key={tag} href={`/services/${service.slug}`}>
                       <Tag className="transition-colors hover:border-[rgba(212,175,55,0.5)] hover:text-gold">{tag}</Tag>
@@ -94,6 +96,36 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
             )}
           </div>
         </div>
+
+        {/* Gallery — only rendered when there's actually something to show;
+            no empty placeholder grid for projects without one (most
+            projects, until this gets filled in via admin). */}
+        {project.gallery.length > 0 && (
+          <RevealItem>
+            <h2 className="mb-4 font-mono text-xs tracking-[3px] text-ink-dim uppercase">Gallery</h2>
+            <div className="grid gap-4 min-[601px]:grid-cols-2 min-[901px]:grid-cols-3">
+              {project.gallery.map((src, i) => (
+                // key includes the index, not just src — an admin could
+                // legitimately paste the same URL twice (confirmed this
+                // collapses to one rendered image with a src-only key,
+                // caught by actually seeding a duplicate during testing).
+                <div
+                  key={`${src}-${i}`}
+                  className="relative aspect-[4/3] overflow-hidden rounded-xl border border-[rgba(255,255,255,0.08)] bg-[#1a170f]"
+                >
+                  <Image
+                    src={src}
+                    alt=""
+                    fill
+                    sizes="(max-width: 600px) 100vw, (max-width: 900px) 50vw, 33vw"
+                    className="object-cover"
+                    priority={i === 0}
+                  />
+                </div>
+              ))}
+            </div>
+          </RevealItem>
+        )}
 
         {(prev || next) && (
           <RevealItem className="flex items-center justify-between border-t border-[rgba(255,255,255,0.08)] pt-8">

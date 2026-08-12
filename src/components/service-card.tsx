@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Card } from "@/components/ui/card";
-import type { Service } from "@/lib/data/services";
+import type { Service } from "@prisma/client";
 
 /**
  * Shared between the homepage teaser and the /services index — one card,
@@ -16,13 +16,20 @@ export function ServiceCard({ service }: { service: Service }) {
         
         <div className="relative z-10">
           <div className="mb-8 inline-flex h-14 w-14 items-center justify-center rounded-xl border border-white/5 bg-[#1a1917] transition-transform duration-300 group-hover:scale-110 group-hover:border-[#d4af37]/30">
-            <Image 
-              src={service.icon} 
-              alt="" 
-              width={28} 
-              height={28} 
-              className="opacity-70 transition-opacity group-hover:opacity-100" 
-            />
+            {/* icon is nullable now that it's admin-editable (Service.icon
+                String?, was a required field on the old static type) — the
+                four real services are always seeded with one, but a
+                service created fresh through admin might not have one set
+                yet. */}
+            {service.icon && (
+              <Image
+                src={service.icon}
+                alt=""
+                width={28}
+                height={28}
+                className="opacity-70 transition-opacity group-hover:opacity-100"
+              />
+            )}
           </div>
           <h3 className="mb-4 font-display text-2xl font-bold text-ink transition-transform duration-300 group-hover:translate-x-1">
             {service.title}

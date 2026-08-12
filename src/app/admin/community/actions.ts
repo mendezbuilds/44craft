@@ -33,6 +33,10 @@ export async function createCommunityUpdateAction(
   await prisma.communityUpdate.create({ data: { ...rest, date: parsedDate, image: image || null } });
 
   revalidatePath("/admin/community");
+  // Public feed too — CommunityUpdate has no review workflow, this is
+  // immediately live. Same gap as Service/Project had (the public
+  // /community page didn't exist yet when this action was first written).
+  revalidatePath("/community");
   redirect("/admin/community?toast=created");
 }
 
@@ -58,6 +62,7 @@ export async function updateCommunityUpdateAction(
   });
 
   revalidatePath("/admin/community");
+  revalidatePath("/community");
   redirect("/admin/community?toast=updated");
 }
 
@@ -74,5 +79,6 @@ export async function deleteCommunityUpdateAction(
   await prisma.communityUpdate.delete({ where: { id } });
 
   revalidatePath("/admin/community");
+  revalidatePath("/community");
   return { success: "Update deleted." };
 }

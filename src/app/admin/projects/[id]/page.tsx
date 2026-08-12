@@ -29,6 +29,7 @@ export default async function EditProjectPage({ params }: { params: Promise<{ id
           title: project.title,
           description: project.description,
           coverImage: project.coverImage ?? "",
+          gallery: project.gallery,
           tags: project.tags,
           liveUrl: project.liveUrl ?? "",
           teamMemberIds: project.teamMembers.map((m) => m.id),

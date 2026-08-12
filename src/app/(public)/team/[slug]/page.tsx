@@ -6,7 +6,7 @@ import { Section } from "@/components/ui/section";
 import { Tag } from "@/components/ui/tag";
 import { Button } from "@/components/ui/button";
 import { getPublishedTeamProfileBySlug } from "@/lib/team-profile";
-import { servicesForSkills } from "@/lib/data/services";
+import { servicesForSkills, getAllServices } from "@/lib/services";
 import { getCurrentUser } from "@/lib/auth";
 import { initials } from "@/lib/initials";
 import type { Socials } from "@/lib/team-profile";
@@ -40,7 +40,8 @@ export default async function TeamMemberPage({
   const user = await getCurrentUser();
   const isOwnProfile = user?.id === profile.userId;
   const socials = profile.socials ?? {};
-  const coveredServices = servicesForSkills(profile.skills);
+  const allServices = await getAllServices();
+  const coveredServices = servicesForSkills(profile.skills, allServices);
 
   return (
     <Section className="py-24 min-[901px]:py-32">

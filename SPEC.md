@@ -208,7 +208,7 @@ A working HTML mockup of the navbar + hero exists (`docs/44craft-hero-mockup.htm
 - Index: grid of offer cards (icon, title, one-liner) → click opens detail page.
 - Detail: full description, deliverables list, "who you'd work with" (team members tagged with that skill), related past projects, CTA to contact.
 
-**Real gap found building the detail pages, flagged rather than silently worked around:** both pages read from the static `src/lib/data/services.ts` array, not the `Service` Prisma table the Phase 6 admin CRUD manages — that table has sat empty and completely disconnected from anything public since it was built. The static file has richer content (custom per-service icons, a keyword map for the skill/service matching both directions need) than an empty DB table could offer, and the index already links to these exact static slugs — switching either page to Prisma now would just 404 every link until someone re-enters all four services by hand. Reconciling this (most likely: seed the DB from the static content, then point both pages at Prisma, making the admin CRUD actually do something) is a real follow-up, not done here — Phase 7 was explicitly display-only, no admin-side/data-model changes.
+**Resolved (follow-up after Phase 7):** both pages now read from the real `Service` table via `src/lib/services.ts` — `scripts/migrate-services-to-db.ts` (rerunnable, upserts by slug) carried the static file's content over first, so nothing was lost, then the static file was deleted. The keyword map used for the skill/service matching both directions need stayed in code (`SERVICE_SKILL_KEYWORDS` in `lib/services.ts`) rather than becoming a DB field — it's matching logic, not admin-editable content. `/services/[slug]` no longer prebakes via `generateStaticParams`; it renders per-request like `/team/[slug]` and `/projects/[slug]` do, and the admin service actions call `revalidatePath` on the public routes, so an edit through `/admin/services` shows up immediately — verified end-to-end (edit through a real authenticated session, confirmed on the public page, reverted), not just assumed from the code.
 
 ### Team (`/team`, `/team/[slug]`)
 - Grid: ~10 people, simple responsive layout, staggered reveal animation on scroll ("assembling" in sequence). No filtering needed at this size.
@@ -218,7 +218,9 @@ A working HTML mockup of the navbar + hero exists (`docs/44craft-hero-mockup.htm
 - Index: cover image, title, service tags, avatar stack of team members involved.
 - Detail: banner, description, tags (→ linked service pages), "Built by" avatar row (→ linked team profiles), gallery, "Visit live site," next/prev navigation.
 
-**Gallery not built:** the `Project` model has no gallery/images field (just a single `coverImage`), and adding one is a schema change — out of scope for a display-only phase. Flagged, not silently dropped; add the field (admin-side) before this can render anything.
+**Resolved (follow-up after Phase 7):** `Project.gallery` (`String[]`, migration `20260812092821_add_project_gallery`) — same "array of pasted URLs" pattern as `tags`, editable via a one-URL-per-line textarea in the admin form. The detail page only renders the section when `gallery.length > 0`; a project without one just doesn't show it, no empty placeholder grid.
+
+**Known limitation carried over, not fixed here:** `next.config.ts`'s image allowlist only covers the Supabase Storage host — a gallery/cover/community-update image URL pasted from anywhere else would throw a runtime error via `next/image`, not just fail to load. Widening the allowlist (e.g. to any `https` host) has a real security tradeoff (the image-optimization proxy becomes a fetch-anything vector) that deserves an explicit decision, not a unilateral fix bundled into an unrelated change.
 
 ### Community (`/community`) — built, Phase 7
 Built out fully — not just a homepage mention:
@@ -340,6 +342,7 @@ Same branded template shell for all four (logo, dark canvas, one clear CTA butto
 - Whether notification emails need per-user preference toggles, or are mandatory
 - Real projects to populate `/projects` at launch, or a "coming soon" state — **resolved as of Phase 7**: "coming soon" state built (same pattern as `/team`'s empty state), swaps to real content automatically the moment projects exist
 - The actual "4 Rules" behind the tagline, if worth turning into real content
-- Reconcile the `Service` Prisma table (Phase 6 admin CRUD, sits empty and disconnected) with the static `src/lib/data/services.ts` array that `/services` and `/services/[slug]` actually render from (Section 6's Services note has the full detail) — the admin service editor currently does nothing publicly visible
-- Add a gallery/images field to the `Project` model (Section 6's Projects note) — the detail page's gallery section can't be built without it
+- ~~Reconcile the `Service` Prisma table with the static services file~~ — **resolved**, see Section 6's Services note
+- ~~Add a gallery/images field to the `Project` model~~ — **resolved**, see Section 6's Projects note
+- Widen `next.config.ts`'s image host allowlist beyond Supabase Storage (Section 6's Projects note) — needs an explicit call given the security tradeoff, not a quiet default change
 - Real per-partner copy for Chronara AI Africa and Starmark on `/community` — currently just the generic "official, long-term partnership" framing, no specifics about what either partner actually does

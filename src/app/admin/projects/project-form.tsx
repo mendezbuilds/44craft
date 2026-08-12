@@ -14,6 +14,7 @@ type ProjectFormValues = {
   title: string;
   description: string;
   coverImage: string;
+  gallery: string[];
   tags: string[];
   liveUrl: string;
   teamMemberIds: string[];
@@ -62,6 +63,17 @@ export function ProjectForm({
       <AdminLabel>
         Cover image URL
         <input name="coverImage" defaultValue={defaultValues.coverImage} className={adminFieldClasses} placeholder="https://…" />
+      </AdminLabel>
+
+      <AdminLabel>
+        Gallery (one image URL per line, optional)
+        <textarea
+          name="gallery"
+          rows={4}
+          defaultValue={defaultValues.gallery.join("\n")}
+          placeholder={"https://…\nhttps://…"}
+          className={`${adminFieldClasses} resize-none`}
+        />
       </AdminLabel>
 
       <AdminLabel>

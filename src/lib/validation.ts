@@ -64,14 +64,10 @@ export const rejectProfileSchema = z.object({
   note: z.string().trim().min(1, "A note is required so the member knows what to change."),
 });
 
-// Admin CRUD (Projects/Services/Community). Projects and CommunityUpdate
-// are read by real public pages as of Phase 7 (/projects, /community).
-// Service is the exception: /services and /services/[slug] read from a
-// separate static file (src/lib/data/services.ts), not this table — the
-// admin Service CRUD this validates is currently disconnected from
-// anything public. Flagged as a real gap, not fixed here (Phase 7 was
-// display-only, no admin-side changes) — see the note atop
-// services/[slug]/page.tsx.
+// Admin CRUD (Projects/Services/Community) — all three now read by real
+// public pages (Project/CommunityUpdate since Phase 7; Service since the
+// follow-up that migrated it off a disconnected static file — see
+// scripts/migrate-services-to-db.ts).
 const optionalUrl = z.string().trim().url().optional().or(z.literal(""));
 
 export const serviceSchema = z.object({
@@ -88,6 +84,7 @@ export const projectSchema = z.object({
   title: z.string().trim().min(1, "Title is required").max(80),
   description: z.string().trim().min(1, "Description is required"),
   coverImage: optionalUrl,
+  gallery: z.array(z.string().trim().url()).max(20),
   tags: z.array(z.string().trim().min(1)).max(20),
   liveUrl: optionalUrl,
   teamMemberIds: z.array(z.string()).max(50),

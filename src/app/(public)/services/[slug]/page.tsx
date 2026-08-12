@@ -7,17 +7,22 @@ import { AvatarStack } from "@/components/avatar-stack";
 import { ProjectCard } from "@/components/project-card";
 import { Reveal } from "@/components/motion/reveal";
 import { RevealItem } from "@/components/motion/reveal-item";
-import { services, teamMembersForService, projectsForService } from "@/lib/data/services";
+import { getServiceBySlug, getAllServices, teamMembersForService, projectsForService } from "@/lib/services";
 import { getPublishedTeamProfiles } from "@/lib/team-profile";
 import { getAllProjects } from "@/lib/projects";
 
 /**
- * Reads from the same static services array the /services index and
- * ServiceCard already use — not the (empty, currently disconnected)
- * Service Prisma table the admin CRUD manages. See SPEC.md Section 6 for
- * the full note on that gap; short version: the index already links here
- * using these slugs, and there's no real admin-entered data yet to switch
- * to without breaking those links. Flagged, not silently worked around.
+ * Now reads the real Service table (src/lib/services.ts) instead of the
+ * static file that used to live at src/lib/data/services.ts — see
+ * SPEC.md Section 6's "Services" note and scripts/migrate-services-to-db.ts
+ * for the full history of that gap and how the content was carried over.
+ *
+ * No generateStaticParams here on purpose (unlike the version that first
+ * shipped this page) — a service created or edited through admin needs to
+ * show up without a rebuild/redeploy. This renders per-request instead,
+ * the same way /projects/[slug] and /team/[slug] already do; admin's
+ * service actions also call revalidatePath so an edit is reflected
+ * immediately rather than only on next natural cache expiry.
  */
 
 export async function generateMetadata({
@@ -26,22 +31,22 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const service = services.find((s) => s.slug === slug);
+  const service = await getServiceBySlug(slug);
   return { title: service ? `${service.title} — 44Craft` : "Service — 44Craft" };
-}
-
-export function generateStaticParams() {
-  return services.map((s) => ({ slug: s.slug }));
 }
 
 export default async function ServiceDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const service = services.find((s) => s.slug === slug);
+  const service = await getServiceBySlug(slug);
   if (!service) notFound();
 
-  const [teamProfiles, allProjects] = await Promise.all([getPublishedTeamProfiles(), getAllProjects()]);
+  const [teamProfiles, allProjects, allServices] = await Promise.all([
+    getPublishedTeamProfiles(),
+    getAllProjects(),
+    getAllServices(),
+  ]);
   const matchingMembers = teamMembersForService(service.slug, teamProfiles);
-  const relatedProjects = projectsForService(service, allProjects);
+  const relatedProjects = projectsForService(service, allProjects, allServices);
 
   return (
     <Section className="py-24 min-[901px]:py-32">
@@ -52,7 +57,7 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
           </Link>
           <div className="flex items-center gap-4">
             <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border border-white/5 bg-[#1a1917]">
-              <Image src={service.icon} alt="" width={28} height={28} className="opacity-80" />
+              {service.icon && <Image src={service.icon} alt="" width={28} height={28} className="opacity-80" />}
             </div>
             <h1 className="text-[clamp(28px,4vw,44px)] leading-[1.1] font-display font-bold tracking-[-1px] text-ink">
               {service.title}

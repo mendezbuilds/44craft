@@ -8,10 +8,11 @@ import { serviceSchema } from "@/lib/validation";
 
 export type ServiceFormState = { error?: string };
 
-/** One deliverable per line — matches the format the static services list
- * (src/lib/data/services.ts) renders publicly, and is easier to type than
- * JSON. Note: this admin-entered data isn't actually connected to that
- * public rendering yet — see the flagged gap in validation.ts. */
+/** One deliverable per line — easier to type than JSON, and matches the
+ * format /services/[slug] renders publicly. This data is now actually
+ * connected to that public rendering (src/lib/services.ts) — see
+ * scripts/migrate-services-to-db.ts for how the previous static-file gap
+ * was closed. */
 function parseDeliverables(raw: FormDataEntryValue | null) {
   if (typeof raw !== "string") return [];
   return raw
@@ -48,6 +49,13 @@ export async function createServiceAction(
   await prisma.service.create({ data: { ...rest, icon: icon || null } });
 
   revalidatePath("/admin/services");
+  // The actual point of this whole migration — Service now has real public
+  // pages to keep in sync (they didn't exist when this action was first
+  // written, hence the gap). Homepage too: ServicesTeaser renders the same
+  // list.
+  revalidatePath("/services");
+  revalidatePath(`/services/${rest.slug}`);
+  revalidatePath("/");
   redirect("/admin/services?toast=created");
 }
 
@@ -68,9 +76,17 @@ export async function updateServiceAction(
   const existing = await prisma.service.findUnique({ where: { slug: rest.slug } });
   if (existing && existing.id !== id) return { error: "That slug is already in use." };
 
+  const current = await prisma.service.findUnique({ where: { id }, select: { slug: true } });
+
   await prisma.service.update({ where: { id }, data: { ...rest, icon: icon || null } });
 
   revalidatePath("/admin/services");
+  revalidatePath("/services");
+  revalidatePath(`/services/${rest.slug}`);
+  if (current && current.slug !== rest.slug) {
+    revalidatePath(`/services/${current.slug}`); // old slug's cached page also needs invalidating if it changed
+  }
+  revalidatePath("/");
   redirect("/admin/services?toast=updated");
 }
 
@@ -84,8 +100,11 @@ export async function deleteServiceAction(
   const id = formData.get("id");
   if (typeof id !== "string") return { error: "Missing service id." };
 
-  await prisma.service.delete({ where: { id } });
+  const deleted = await prisma.service.delete({ where: { id } });
 
   revalidatePath("/admin/services");
+  revalidatePath("/services");
+  revalidatePath(`/services/${deleted.slug}`);
+  revalidatePath("/");
   return { success: "Service deleted." };
 }
