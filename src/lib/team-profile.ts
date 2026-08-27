@@ -75,7 +75,7 @@ export type PublicProfile = ProfileSnapshot & {
   id: string;
   slug: string;
   userId: string;
-  projects: { id: string; slug: string; title: string }[];
+  projects: { id: string; slug: string; title: string; coverImage: string | null }[];
 };
 
 function toPublicProfile(row: {
@@ -83,7 +83,7 @@ function toPublicProfile(row: {
   slug: string;
   userId: string;
   publishedVersion: unknown;
-  projects: { id: string; slug: string; title: string }[];
+  projects: { id: string; slug: string; title: string; coverImage: string | null }[];
 }): PublicProfile {
   const snapshot = row.publishedVersion as ProfileSnapshot;
   return { ...snapshot, id: row.id, slug: row.slug, userId: row.userId, projects: row.projects };
@@ -100,7 +100,7 @@ function toPublicProfile(row: {
 export async function getPublishedTeamProfiles(): Promise<PublicProfile[]> {
   const rows = await prisma.teamProfile.findMany({
     where: { hasBeenPublished: true },
-    include: { projects: { select: { id: true, slug: true, title: true } } },
+    include: { projects: { select: { id: true, slug: true, title: true, coverImage: true } } },
     orderBy: { name: "asc" },
   });
   return rows.map(toPublicProfile);
@@ -109,7 +109,7 @@ export async function getPublishedTeamProfiles(): Promise<PublicProfile[]> {
 export async function getPublishedTeamProfileBySlug(slug: string): Promise<PublicProfile | null> {
   const row = await prisma.teamProfile.findFirst({
     where: { slug, hasBeenPublished: true },
-    include: { projects: { select: { id: true, slug: true, title: true } } },
+    include: { projects: { select: { id: true, slug: true, title: true, coverImage: true } } },
   });
   return row ? toPublicProfile(row) : null;
 }

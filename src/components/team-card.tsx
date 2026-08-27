@@ -124,10 +124,19 @@ export function TeamCard({
             )}
           </div>
 
-          {/* Info area — separate panel, doesn't sit over the image */}
+          {/* Info area — separate panel, doesn't sit over the image. Name/
+              role truncate to one line each on /team's grid (hideSkills
+              callers only — see that prop's own comment) so every card's
+              info panel is the same fixed height regardless of content
+              length, rather than fighting the grid's `items-start` (kept
+              deliberately non-stretching for the image-squeeze bug it
+              fixed — see the sizing note above) with per-card height
+              variance from wrapping text. */}
           <div className="border-t border-[rgba(255,255,255,0.08)] bg-[#141310] px-4 py-4">
-            <h3 className="font-display text-base font-bold text-ink">{member.name}</h3>
-            <p className={hideSkills ? "text-sm text-ink-dim" : "mb-3 text-sm text-ink-dim"}>{member.roleTitle}</p>
+            <h3 className={hideSkills ? "truncate font-display text-base font-bold text-ink" : "font-display text-base font-bold text-ink"}>
+              {member.name}
+            </h3>
+            <p className={hideSkills ? "truncate text-sm text-ink-dim" : "mb-3 text-sm text-ink-dim"}>{member.roleTitle}</p>
             {!hideSkills && (
               <div className="flex flex-wrap gap-2">
                 {member.skills.map((skill) => (

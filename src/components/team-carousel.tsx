@@ -62,7 +62,16 @@ export function TeamCarousel({ members }: { members: TeamCardMember[] }) {
   return (
     <div>
       <div className="relative overflow-hidden">
-        <AnimatePresence initial={false} custom={direction}>
+        {/* mode="popLayout" — without it, the outgoing and incoming slides
+            briefly coexist in normal document flow during the crossfade
+            (AnimatePresence's default), stacking vertically for that
+            instant and shifting the container's height. That read as a
+            two-step glitch: a visible vertical nudge as the old slide's
+            box affected layout, *then* the horizontal swipe settling —
+            not a drag/scroll axis conflict, a layout one. popLayout pulls
+            the exiting slide out of flow (position: absolute) the moment
+            it starts leaving, so it can't push the incoming one around. */}
+        <AnimatePresence initial={false} custom={direction} mode="popLayout">
           <motion.div
             key={member.slug}
             initial={reducedMotion ? false : { x: direction === 0 ? 0 : direction > 0 ? "100%" : "-100%", opacity: direction === 0 ? 1 : 0 }}
