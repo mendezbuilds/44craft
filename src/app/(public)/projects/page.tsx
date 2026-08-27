@@ -5,8 +5,12 @@ import { Reveal } from "@/components/motion/reveal";
 import { RevealItem } from "@/components/motion/reveal-item";
 import { getAllProjects } from "@/lib/projects";
 
+const DESCRIPTION = "Real work from 44Craft — the projects the team has actually shipped.";
+
 export const metadata: Metadata = {
-  title: "Projects — 44Craft",
+  title: "Projects",
+  description: DESCRIPTION,
+  openGraph: { title: "Projects — 44Craft", description: DESCRIPTION },
 };
 
 /**

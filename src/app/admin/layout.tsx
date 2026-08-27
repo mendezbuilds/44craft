@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -5,6 +6,12 @@ import { getCurrentUser } from "@/lib/auth";
 import { signOutAction } from "@/lib/auth-actions";
 import { AdminButton } from "@/components/admin/admin-button";
 import { AdminNav } from "@/components/admin/admin-nav";
+
+// Internal-only, role-gated — should never appear in search results.
+export const metadata: Metadata = {
+  title: { template: "%s — Admin — 44Craft", default: "Admin" },
+  robots: { index: false, follow: false },
+};
 
 /**
  * Real lockup (same public/brand/logo-wordmark.png the public navbar

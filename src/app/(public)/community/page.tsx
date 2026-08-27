@@ -8,8 +8,12 @@ import { RevealItem } from "@/components/motion/reveal-item";
 import { getPublishedTeamProfiles } from "@/lib/team-profile";
 import { prisma } from "@/lib/prisma";
 
+const DESCRIPTION = "44Craft's community and partnerships — updates, official partners, and how to get involved.";
+
 export const metadata: Metadata = {
-  title: "Community — 44Craft",
+  title: "Community",
+  description: DESCRIPTION,
+  openGraph: { title: "Community — 44Craft", description: DESCRIPTION },
 };
 
 const PARTNERS = [

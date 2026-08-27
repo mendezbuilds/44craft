@@ -1,6 +1,13 @@
+import type { Metadata } from "next";
 import { getValidInvite } from "@/lib/accept-invite";
 import { AuthShell } from "@/components/auth-shell";
 import { AcceptInviteForm } from "./accept-invite-form";
+
+// Contains a real invite token in the URL — must never be indexed.
+export const metadata: Metadata = {
+  title: "Accept invite",
+  robots: { index: false, follow: false },
+};
 
 export default async function AcceptInvitePage({
   params,

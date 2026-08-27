@@ -10,6 +10,7 @@ import { Reveal } from "@/components/motion/reveal";
 import { RevealItem } from "@/components/motion/reveal-item";
 import { getAllProjects, getProjectBySlug } from "@/lib/projects";
 import { serviceForTag, getAllServices } from "@/lib/services";
+import { DEFAULT_OG_IMAGE } from "@/lib/seo";
 
 export async function generateMetadata({
   params,
@@ -18,7 +19,17 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const project = await getProjectBySlug(slug);
-  return { title: project ? `${project.title} — 44Craft` : "Project — 44Craft" };
+  if (!project) return { title: "Project" };
+
+  return {
+    title: project.title,
+    description: project.description,
+    openGraph: {
+      title: `${project.title} — 44Craft`,
+      description: project.description,
+      images: project.coverImage ? [{ url: project.coverImage }] : DEFAULT_OG_IMAGE,
+    },
+  };
 }
 
 export default async function ProjectDetailPage({ params }: { params: Promise<{ slug: string }> }) {

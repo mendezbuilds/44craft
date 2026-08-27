@@ -9,6 +9,7 @@ import { getPublishedTeamProfileBySlug } from "@/lib/team-profile";
 import { servicesForSkills, getAllServices } from "@/lib/services";
 import { getCurrentUser } from "@/lib/auth";
 import { initials } from "@/lib/initials";
+import { DEFAULT_OG_IMAGE } from "@/lib/seo";
 import type { Socials } from "@/lib/team-profile";
 
 export async function generateMetadata({
@@ -18,7 +19,18 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const profile = await getPublishedTeamProfileBySlug(slug);
-  return { title: profile ? `${profile.name} — 44Craft` : "Team member — 44Craft" };
+  if (!profile) return { title: "Team member" };
+
+  const description = `${profile.name}, ${profile.roleTitle} at 44Craft.${profile.bio ? ` ${profile.bio}` : ""}`;
+  return {
+    title: profile.name,
+    description,
+    openGraph: {
+      title: `${profile.name} — 44Craft`,
+      description,
+      images: profile.photo ? [{ url: profile.photo }] : DEFAULT_OG_IMAGE,
+    },
+  };
 }
 
 const SOCIAL_LABELS: Record<keyof Socials, string> = {

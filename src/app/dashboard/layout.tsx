@@ -1,7 +1,14 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
 import { signOutAction } from "@/lib/auth-actions";
+
+// Member-only, signed-in area — should never appear in search results.
+export const metadata: Metadata = {
+  title: { template: "%s — Dashboard — 44Craft", default: "Dashboard" },
+  robots: { index: false, follow: false },
+};
 
 /**
  * Carries the brand feel (dark canvas, same type system) but stays calm —

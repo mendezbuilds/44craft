@@ -1,7 +1,15 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import { AuthShell } from "@/components/auth-shell";
 import { EntryGem } from "@/components/motion/entry-gem";
 import { SignInForm } from "./signin-form";
+
+// Private auth gate, not a marketing page — nothing here should turn up
+// in search results.
+export const metadata: Metadata = {
+  title: "Sign in",
+  robots: { index: false, follow: false },
+};
 
 /**
  * The entry point to the whole authenticated experience — first thing an

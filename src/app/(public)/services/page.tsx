@@ -3,8 +3,12 @@ import { Section } from "@/components/ui/section";
 import { ServiceCard } from "@/components/service-card";
 import { getAllServices } from "@/lib/services";
 
+const DESCRIPTION = "What 44Craft actually does — development, marketing, and community services, not a menu of buzzwords.";
+
 export const metadata: Metadata = {
-  title: "Services — 44Craft",
+  title: "Services",
+  description: DESCRIPTION,
+  openGraph: { title: "Services — 44Craft", description: DESCRIPTION },
 };
 
 export default async function ServicesPage() {

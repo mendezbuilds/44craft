@@ -10,6 +10,7 @@ import { RevealItem } from "@/components/motion/reveal-item";
 import { getServiceBySlug, getAllServices, teamMembersForService, projectsForService } from "@/lib/services";
 import { getPublishedTeamProfiles } from "@/lib/team-profile";
 import { getAllProjects } from "@/lib/projects";
+import { DEFAULT_OG_IMAGE } from "@/lib/seo";
 
 /**
  * Now reads the real Service table (src/lib/services.ts) instead of the
@@ -32,7 +33,17 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const service = await getServiceBySlug(slug);
-  return { title: service ? `${service.title} — 44Craft` : "Service — 44Craft" };
+  if (!service) return { title: "Service" };
+
+  return {
+    title: service.title,
+    description: service.shortDescription,
+    openGraph: {
+      title: `${service.title} — 44Craft`,
+      description: service.shortDescription,
+      images: DEFAULT_OG_IMAGE,
+    },
+  };
 }
 
 export default async function ServiceDetailPage({ params }: { params: Promise<{ slug: string }> }) {

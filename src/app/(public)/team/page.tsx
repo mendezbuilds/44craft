@@ -3,8 +3,12 @@ import { Section } from "@/components/ui/section";
 import { TeamCard } from "@/components/team-card";
 import { getPublishedTeamProfiles } from "@/lib/team-profile";
 
+const DESCRIPTION = "The people building 44Craft — the team behind the work, not a stock-photo about page.";
+
 export const metadata: Metadata = {
-  title: "Team — 44Craft",
+  title: "Team",
+  description: DESCRIPTION,
+  openGraph: { title: "Team — 44Craft", description: DESCRIPTION },
 };
 
 export default async function TeamPage() {
