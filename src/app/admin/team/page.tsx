@@ -2,6 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { StatusBadge } from "@/components/admin/status-badge";
 import { AdminPanel } from "@/components/admin/admin-panel";
+import { ToggleStatusButton } from "@/components/admin/toggle-status-button";
 import { Reveal } from "@/components/motion/reveal";
 import { RevealItem } from "@/components/motion/reveal-item";
 
@@ -12,8 +13,10 @@ const PROFILE_TONE = {
 } as const;
 
 /** Full roster, not just pending reviews — click through to any member's
- * full profile. Deactivate/reactivate lives on the detail page rather
- * than inline here, so it's a deliberate action, not a stray click. */
+ * full profile. Deactivate/reactivate is available right here per row
+ * (reversible, low-risk); delete is deliberately *not* — it lives in its
+ * own "danger zone" on the detail page instead, several clicks and a
+ * typed-name confirmation away from this list's quick actions. */
 export default async function AdminTeamPage() {
   const profiles = await prisma.teamProfile.findMany({
     include: { user: { select: { id: true, email: true, status: true } } },
@@ -43,6 +46,7 @@ export default async function AdminTeamPage() {
                 <th className="py-2 pr-4 font-normal">Email</th>
                 <th className="py-2 pr-4 font-normal">Profile</th>
                 <th className="py-2 pr-4 font-normal">Account</th>
+                <th className="py-2 pr-4 font-normal">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -64,6 +68,9 @@ export default async function AdminTeamPage() {
                       tone={profile.user.status === "active" ? "positive" : "negative"}
                     />
                   </td>
+                  <td className="py-3 pr-4">
+                    <ToggleStatusButton userId={profile.user.id} status={profile.user.status} compact />
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -72,8 +79,13 @@ export default async function AdminTeamPage() {
           <ul className="flex flex-col gap-3 min-[640px]:hidden">
             {profiles.map((profile) => (
               <li key={profile.id}>
-                <Link href={`/admin/team/${profile.id}`}>
-                  <AdminPanel glow className="p-4">
+                <AdminPanel glow className="p-4">
+                  {/* Link wraps only the identity block, not the whole
+                      card — the toggle button below is a real <form>/
+                      <button>, and a submit button can't legally nest
+                      inside an <a> (same class of bug as AvatarStack's
+                      nested-Link issue elsewhere in this app). */}
+                  <Link href={`/admin/team/${profile.id}`} className="block">
                     <p className="mb-0.5 truncate font-display text-sm font-bold text-ink">{profile.name}</p>
                     <p className="mb-3 truncate text-sm text-ink-dim">
                       {profile.roleTitle} · {profile.user.email}
@@ -85,8 +97,11 @@ export default async function AdminTeamPage() {
                         tone={profile.user.status === "active" ? "positive" : "negative"}
                       />
                     </div>
-                  </AdminPanel>
-                </Link>
+                  </Link>
+                  <div className="mt-3 border-t border-[rgba(255,255,255,0.08)] pt-3">
+                    <ToggleStatusButton userId={profile.user.id} status={profile.user.status} compact />
+                  </div>
+                </AdminPanel>
               </li>
             ))}
           </ul>

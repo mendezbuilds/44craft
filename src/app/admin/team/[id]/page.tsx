@@ -6,7 +6,8 @@ import { AdminPanel } from "@/components/admin/admin-panel";
 import { AdminButton } from "@/components/admin/admin-button";
 import { StatusBadge } from "@/components/admin/status-badge";
 import type { ProfileSnapshot } from "@/lib/team-profile";
-import { ToggleStatusButton } from "./toggle-status-button";
+import { ToggleStatusButton } from "@/components/admin/toggle-status-button";
+import { DeleteTeamMemberButton } from "@/components/admin/delete-team-member-button";
 
 const PROFILE_TONE = {
   draft: "neutral",
@@ -122,6 +123,15 @@ export default async function AdminTeamMemberPage({ params }: { params: Promise<
             </p>
           </div>
         )}
+      </AdminPanel>
+
+      {/* Its own panel, well below the deactivate/reactivate control above
+          — an irreversible delete has no business sharing a row with a
+          reversible one where a misclick could hit the wrong button. */}
+      <AdminPanel className="border-red-500/20">
+        <p className="mb-1 font-mono text-[11px] tracking-wide text-red-400 uppercase">Danger zone</p>
+        <p className="mb-4 text-sm text-ink-dim">Permanently remove this person instead of just deactivating them.</p>
+        <DeleteTeamMemberButton profileId={profile.id} name={profile.name} />
       </AdminPanel>
     </div>
   );
