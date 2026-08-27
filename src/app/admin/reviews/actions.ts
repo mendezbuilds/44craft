@@ -18,6 +18,15 @@ export type ApproveProfileState = { error?: string; success?: string };
  * approval: what was under review is now what the public site shows.
  * pendingVersion clears since there's nothing left awaiting review.
  *
+ * `hasBeenPublished` only flips to true here if the account is
+ * currently active — a deactivated member's pending edit can still be
+ * reviewed and approved (the content itself is fine), but approval
+ * shouldn't be a backdoor around admin/team's own deliberate "reactivate
+ * doesn't auto-republish" rule (see toggleUserStatusAction). If they're
+ * deactivated, publishedVersion still updates to the approved content
+ * (so republishing later shows the right thing), it just doesn't go
+ * public yet.
+ *
  * Returns state (was a plain void FormData action) so the row's client
  * button can show a loading spinner, a small gold particle-burst echo of
  * the public spark-burst language, and toast the result — see
@@ -33,18 +42,20 @@ export async function approveProfileAction(
 
   const profile = await prisma.teamProfile.findUnique({
     where: { id },
-    include: { user: { select: { email: true } } },
+    include: { user: { select: { email: true, status: true } } },
   });
   if (!profile || profile.status !== "pending") {
     return { error: "This profile is no longer pending." };
   }
+
+  const accountActive = profile.user.status === "active";
 
   await prisma.$transaction([
     prisma.teamProfile.update({
       where: { id },
       data: {
         status: "published",
-        hasBeenPublished: true,
+        hasBeenPublished: accountActive ? true : profile.hasBeenPublished,
         publishedVersion: profile.pendingVersion ?? undefined,
         pendingVersion: Prisma.DbNull,
       },
@@ -56,9 +67,19 @@ export async function approveProfileAction(
 
   revalidatePath("/admin/reviews");
   revalidatePath("/admin");
-  revalidatePath("/team");
-  revalidatePath(`/team/${profile.slug}`);
-  revalidatePath("/"); // homepage team teaser reads the same query
+  if (accountActive) {
+    revalidatePath("/team");
+    revalidatePath(`/team/${profile.slug}`);
+    revalidatePath("/"); // homepage team teaser reads the same query
+  }
+
+  if (!accountActive) {
+    // Content is approved and saved, but nothing actually went public
+    // (their account is deactivated) — a "your profile is live" email
+    // would just be wrong, so skip it rather than notify them of
+    // something that isn't true yet.
+    return { success: `${profile.name}'s edit was approved, but their account is deactivated — it stays hidden until reactivated and republished.` };
+  }
 
   // Best-effort — the profile is already live either way, so a failed
   // send here shouldn't block or roll back the approval itself.

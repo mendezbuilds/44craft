@@ -67,9 +67,16 @@ model TeamProfile {
   // to `pending` (or `draft`, on rejection) so admin can review it — but
   // they should keep showing their last-approved content on the public
   // site throughout that review, not disappear until the edit is
-  // re-approved. hasBeenPublished (sticky, never reset once true) plus
-  // publishedVersion is what public queries filter/render on;
-  // `status` is purely about the review workflow.
+  // re-approved. hasBeenPublished plus publishedVersion is what public
+  // queries filter/render on; `status` is purely about the review
+  // workflow.
+  //
+  // Sticky in the review workflow specifically (never reset by a reject
+  // or a fresh pending edit) — but not truly permanent-once-true: an
+  // admin deactivating this person's account explicitly unsets it
+  // (toggleUserStatusAction), and reactivating deliberately does *not*
+  // set it back — that needs its own admin decision (republishProfileAction)
+  // since the content may be stale by the time they're reactivated.
   hasBeenPublished Boolean @default(false)
 
   // Projects worked on. Doubling as "featured work" (reverse of this

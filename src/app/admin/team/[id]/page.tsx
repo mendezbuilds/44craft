@@ -7,6 +7,7 @@ import { AdminButton } from "@/components/admin/admin-button";
 import { StatusBadge } from "@/components/admin/status-badge";
 import type { ProfileSnapshot } from "@/lib/team-profile";
 import { ToggleStatusButton } from "@/components/admin/toggle-status-button";
+import { RepublishProfileButton } from "@/components/admin/republish-profile-button";
 import { DeleteTeamMemberButton } from "@/components/admin/delete-team-member-button";
 
 const PROFILE_TONE = {
@@ -23,6 +24,15 @@ export default async function AdminTeamMemberPage({ params }: { params: Promise<
     include: { user: { select: { id: true, email: true, status: true } } },
   });
   if (!profile) notFound();
+
+  // Was public at some point (a real publishedVersion snapshot exists)
+  // but isn't now — the only way that happens is toggleUserStatusAction
+  // unpublishing on deactivation (approving a pending edit while
+  // deactivated deliberately leaves it false too, see that action's
+  // comment), so this is specifically "hidden pending a fresh republish
+  // decision," not "never published yet."
+  const wasUnpublished = !profile.hasBeenPublished && profile.publishedVersion !== null;
+  const canRepublish = wasUnpublished && profile.user.status === "active";
 
   // Prefer the last-published snapshot (what the public site shows); fall
   // back to the live columns for a member who's never been published.
@@ -64,6 +74,7 @@ export default async function AdminTeamMemberPage({ params }: { params: Promise<
                   tone={profile.user.status === "active" ? "positive" : "negative"}
                 />
                 {profile.hasBeenPublished && <StatusBadge label="live on site" tone="positive" />}
+                {wasUnpublished && <StatusBadge label="unpublished" tone="warning" />}
               </div>
             </div>
           </div>
@@ -75,8 +86,19 @@ export default async function AdminTeamMemberPage({ params }: { params: Promise<
               </AdminButton>
             )}
             <ToggleStatusButton userId={profile.user.id} status={profile.user.status} />
+            {canRepublish && <RepublishProfileButton profileId={profile.id} />}
           </div>
         </div>
+
+        {wasUnpublished && (
+          <div className="mt-6 border-t border-[rgba(255,255,255,0.08)] pt-4">
+            <p className="text-sm text-ink-dim">
+              {canRepublish
+                ? "This profile was pulled off the public site when the account was deactivated. Reactivating didn't bring it back automatically — use Republish above once you've confirmed their info is still current."
+                : "This profile was pulled off the public site when the account was deactivated. Reactivate the account first, then republish."}
+            </p>
+          </div>
+        )}
 
         {snapshot.bio && (
           <div className="mt-6 border-t border-[rgba(255,255,255,0.08)] pt-4">
