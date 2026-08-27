@@ -339,7 +339,7 @@ Same branded template shell for all four (logo, dark canvas, one clear CTA butto
 ## 13. Still Open (not blockers for Phase 1, but needed before their relevant phase)
 
 - Contact form field list + where submissions land (email only, or stored in Supabase too?)
-- Discord/Telegram link for the community "join" CTA
+- ~~Discord link for the community "join" CTA~~ — **resolved**: real Discord (`discord.gg/VHhgUHd5N9`) and X (`x.com/44Craft_`) live in the footer and community page as of the Phase 9 launch audit. Telegram is still open — no real link yet.
 - Real content for "why work with us" stats/differentiators
 - Whether notification emails need per-user preference toggles, or are mandatory
 - Real projects to populate `/projects` at launch, or a "coming soon" state — **resolved as of Phase 7**: "coming soon" state built (same pattern as `/team`'s empty state), swaps to real content automatically the moment projects exist

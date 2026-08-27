@@ -112,24 +112,23 @@ export default async function CommunityPage() {
           </div>
         </div>
 
-        {/* Join CTA — no real Discord/Telegram link exists yet (SPEC.md
-            Section 13, still open). A styled-disabled state with an honest
-            "coming soon" label, not a button that looks live but points at
-            "#" — a visitor clicking a real-looking "Join our Discord"
-            button and landing nowhere is worse than one that's upfront
-            about not being ready yet. */}
+        {/* Join CTA — Discord is real as of Phase 9's launch audit (was
+            "#" pending SPEC.md Section 13). Telegram still isn't, so the
+            copy only promises what's actually live. */}
         <RevealItem>
           <Card className="flex flex-col items-center gap-4 py-14 text-center">
             <h2 className="font-display text-2xl font-bold text-ink">Come build with us.</h2>
             <p className="max-w-[420px] text-sm text-ink-dim">
-              Our Discord/Telegram is being set up — the join link lands here the moment it&apos;s live.
+              Join the Discord — that&apos;s where the community actually happens.
             </p>
-            <span
-              aria-disabled="true"
-              className="inline-flex cursor-not-allowed items-center justify-center rounded-[6px] border border-[rgba(255,255,255,0.14)] bg-black/25 px-5 py-[10px] font-body text-[13.5px] font-medium text-ink-dim/60"
+            <a
+              href="https://discord.gg/VHhgUHd5N9"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center rounded-[6px] border border-[rgba(212,175,55,0.45)] bg-black/25 px-5 py-[10px] font-body text-[13.5px] font-medium text-ink transition-colors duration-200 hover:border-gold hover:text-gold"
             >
-              Join the community — coming soon
-            </span>
+              Join the community
+            </a>
           </Card>
         </RevealItem>
 
