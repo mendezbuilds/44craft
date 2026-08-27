@@ -1,7 +1,7 @@
-import Image from "next/image";
 import Link from "next/link";
 import { initials } from "@/lib/initials";
 import { SOCIAL_ICONS } from "@/components/icons/social-icons";
+import { TeamPhoto } from "@/components/team-photo";
 import type { TeamCardMember } from "@/components/team-card";
 import type { Socials } from "@/lib/team-profile";
 
@@ -41,24 +41,18 @@ export function TeamCardCompact({ member }: { member: TeamCardMember }) {
       className="team-card-glow group flex w-full flex-col overflow-hidden rounded-xl border border-[rgba(255,255,255,0.08)] transition-[border-color] duration-300 hover:border-[rgba(212,175,55,0.5)]"
     >
       {/* ~70% of the card — own aspect ratio, not flex-1 (see note above).
-          4:3 — a real photo crop, not just a ratio that makes the math
-          work: solving purely from the info strip's ~49px measured height
-          landed on 14:5 (2.8:1), which in an actual render turned a
-          portrait headshot into a sliver showing hair and nothing else.
-          object-cover crops to fill whatever box it's given, so an
-          extreme ratio here isn't a rendering bug, it's actively
-          discarding the photo. 4:3 stays a recognizable photo crop; the
-          strip below grew (single row → stacked two rows) to make up the
-          rest of the ~70/30 split instead. */}
+          4:3 was originally picked as a "recognizable photo crop" ratio
+          for a plain object-cover fill — solving purely from the info
+          strip's ~49px measured height landed on 14:5 (2.8:1), which
+          turned a portrait headshot into a sliver showing hair and
+          nothing else. TeamPhoto (blurred backdrop + contain) means this
+          box no longer crops the photo at all regardless of its ratio,
+          but 4:3 is still a fine frame shape to keep — the strip below
+          grew (single row → stacked two rows) to make up the rest of the
+          ~70/30 split instead. */}
       <div className="relative aspect-[4/3] shrink-0 overflow-hidden bg-gradient-to-br from-[#1a170f] to-[#0a0a08]">
         {member.photo ? (
-          <Image
-            src={member.photo}
-            alt=""
-            fill
-            sizes="100vw"
-            className="object-cover transition-transform duration-500 group-hover:scale-105"
-          />
+          <TeamPhoto src={member.photo} sizes="100vw" hoverZoom />
         ) : (
           <span
             aria-hidden="true"
