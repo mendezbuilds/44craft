@@ -37,6 +37,11 @@ Sandbox mode (`onboarding@resend.dev`) works for local development but can
 only deliver to the email address on your Resend account. Get an API key
 from [resend.com](https://resend.com).
 
+> The live `44craft.com` deployment already has its own domain verified in
+> Resend (`EMAIL_FROM` in `src/lib/resend.ts` sends as `hello@44craft.com`
+> to any recipient) — this sandbox caveat only applies if you're setting up
+> a separate Resend account of your own for local development.
+
 ## 3. Configure environment variables
 
 ```bash
@@ -108,10 +113,10 @@ npm run dev
 ```
 
 - Sign in at `/signin` with the seeded admin credentials.
-- From `/admin/invites`, send an invite to another email address. In Resend
-  sandbox mode this only actually delivers if that address is the one on
-  your Resend account — check the Resend dashboard logs either way to grab
-  the link if delivery is skipped.
+- From `/admin/invites`, send an invite to another email address. If you're
+  running your own Resend account still in sandbox mode, this only
+  actually delivers if that address is the one on your account — check the
+  Resend dashboard logs either way to grab the link if delivery is skipped.
 - Open the invite link (`/accept-invite/[token]`), set a password — the
   account is created and active immediately, landing in `/dashboard`,
   which redirects straight into the guided profile editor

@@ -95,7 +95,7 @@ A working HTML mockup of the navbar + hero exists (`docs/44craft-hero-mockup.htm
 - **Framework:** Next.js (App Router)
 - **Database + Auth + Storage:** Supabase (the user creates this project themselves — use env vars, don't assume credentials)
 - **ORM:** Prisma
-- **Transactional email:** Resend (sandbox domain `onboarding@resend.dev` for early development — can only send to the account owner's own email until a custom domain is verified; swap the "from" address later, no code changes needed)
+- **Transactional email:** Resend — `44craft.com` is now verified; `EMAIL_FROM` (`src/lib/resend.ts`) sends as `hello@44craft.com` to any recipient. (Started on the sandbox `onboarding@resend.dev` domain, restricted to the account owner's own inbox — exactly the one-line swap this was always meant to be, no other code changes needed.)
 - **Animation:** Framer Motion
 - **3D:** Three.js / React Three Fiber (not currently used — the abstract facet-diamond concept that would have needed this was tried and retired in favor of the real photo logo mark; keep in the stack in case a future genuine 3D need comes up, don't use it to reintroduce the retired gem)
 - **Hosting:** Vercel (already set up)
@@ -330,7 +330,7 @@ Same branded template shell for all four (logo, dark canvas, one clear CTA butto
 ## 12. Environment / Setup Prerequisites
 
 - Supabase project (user is creating this) — need project URL + API keys as env vars
-- Resend account — sandbox domain works for Phase 1, real domain + verification later
+- ~~Resend account — sandbox domain works for Phase 1, real domain + verification later~~ — **resolved**: `44craft.com` verified, see Section 3's Transactional email note
 - Vercel account — already set up
 - GitHub repo — not created yet, will be added once ready for full testing; don't assume a repo exists early on
 
