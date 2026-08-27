@@ -55,7 +55,7 @@ export default async function DashboardPage() {
           <div className="min-w-0">
             <h3 className="font-display text-base font-bold text-ink">{profile.name}</h3>
             <p className="mb-2 text-sm text-ink-dim">{profile.roleTitle}</p>
-            {profile.bio && <p className="mb-3 text-sm text-ink-dim">{profile.bio}</p>}
+            {profile.bio && <p className="mb-3 text-sm whitespace-pre-wrap text-ink-dim">{profile.bio}</p>}
             <div className="flex flex-wrap gap-2">
               {profile.skills.map((skill) => (
                 <Tag key={skill}>{skill}</Tag>

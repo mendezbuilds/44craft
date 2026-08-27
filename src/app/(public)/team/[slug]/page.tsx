@@ -150,7 +150,7 @@ export default async function TeamMemberPage({
           <p className="mb-6 text-xl font-medium text-gold">{profile.roleTitle}</p>
 
           {profile.bio && (
-            <p className="mb-12 max-w-[560px] text-lg leading-[1.6] text-ink-dim">{profile.bio}</p>
+            <p className="mb-12 max-w-[560px] text-lg leading-[1.6] whitespace-pre-wrap text-ink-dim">{profile.bio}</p>
           )}
 
           <div className="mb-10">

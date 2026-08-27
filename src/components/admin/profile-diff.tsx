@@ -19,13 +19,13 @@ function TextRow({ label, before, after }: { label: string; before: string; afte
         <p className="mb-0.5 font-mono text-[11px] tracking-wide text-ink-dim uppercase">
           {label} <span className="min-[480px]:hidden">(published)</span>
         </p>
-        <p className={cn("text-sm", changed ? "text-ink-dim/70 line-through" : "text-ink-dim")}>{before || "—"}</p>
+        <p className={cn("text-sm whitespace-pre-wrap", changed ? "text-ink-dim/70 line-through" : "text-ink-dim")}>{before || "—"}</p>
       </div>
       <div>
         <p className="mb-0.5 font-mono text-[11px] tracking-wide text-ink-dim uppercase min-[480px]:invisible">
           {label} <span className="min-[480px]:hidden">(pending)</span>
         </p>
-        <p className={cn("text-sm", changed ? "font-medium text-ink" : "text-ink-dim")}>{after || "—"}</p>
+        <p className={cn("text-sm whitespace-pre-wrap", changed ? "font-medium text-ink" : "text-ink-dim")}>{after || "—"}</p>
       </div>
     </div>
   );
