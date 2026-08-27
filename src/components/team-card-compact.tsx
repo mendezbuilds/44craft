@@ -9,11 +9,12 @@ const SOCIAL_ORDER: (keyof Socials)[] = ["github", "linkedin", "x", "website"];
 
 /**
  * The mobile teaser carousel's slide (team-carousel.tsx) — image-dominant,
- * ~70/30 photo-to-info split, on request (was 80/20 initially). Deliberately not the same
- * component as team-card.tsx's grid card: that one shows role + full skill
- * tags, this one shows just name + social icons, on the reasoning that a
- * single full-width swipeable slide is a glance/browse moment (tap through
- * to the profile for the rest), not the place to repeat everything.
+ * ~70/30 photo-to-info split, on request (was 80/20 initially). Not the
+ * same component as team-card.tsx's grid card (that one also shows skill
+ * tags, this one doesn't — glance/browse moment, tap through to the
+ * profile for the rest) but shows the same name + role as desktop now;
+ * omitting role here was a real gap; not a deliberate content difference
+ * worth keeping.
  *
  * Sizing follows the lesson from team-card.tsx's own history this
  * session (see its comment) rather than repeating the mistake: the image
@@ -63,13 +64,14 @@ export function TeamCardCompact({ member }: { member: TeamCardMember }) {
         )}
       </div>
 
-      {/* ~30% — name and the icon row stacked (not side-by-side) so the
-          strip has enough natural height for the split without empty
-          padding standing in for content. Name still forced to one line
-          (truncate); icon row is a fixed height so it holds its place
-          even with zero socials. */}
-      <div className="flex flex-col gap-2 border-t border-[rgba(255,255,255,0.08)] bg-[#141310] px-4 py-5">
+      {/* ~30% — name, role, and the icon row stacked (not side-by-side) so
+          the strip has enough natural height for the split without empty
+          padding standing in for content. Name and role both forced to
+          one line (truncate); icon row is a fixed height so it holds its
+          place even with zero socials. */}
+      <div className="flex flex-col gap-1.5 border-t border-[rgba(255,255,255,0.08)] bg-[#141310] px-4 py-5">
         <h3 className="min-w-0 truncate font-display text-base font-bold text-ink">{member.name}</h3>
+        <p className="min-w-0 truncate text-sm text-ink-dim">{member.roleTitle}</p>
         <div className="flex h-5 shrink-0 items-center gap-2.5 text-ink-dim">
           {activeSocials.map((key) => {
             const Icon = SOCIAL_ICONS[key];
