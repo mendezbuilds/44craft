@@ -126,7 +126,7 @@ export function TeamTeaserGrid({
                       : { duration: 0.4, delay: i * 0.05, ease: "easeOut" }
                   }
                 >
-                  <TeamCard member={member} />
+                  <TeamCard member={member} hideSkills />
                 </motion.div>
               </div>
             ))}

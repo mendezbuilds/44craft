@@ -72,9 +72,11 @@ export function TeamCard({
   hideSkills = false,
 }: {
   member: TeamCardMember;
-  /** /team's own grid passes this — the homepage teaser (team-teaser-grid.tsx)
-   * doesn't, since its skill chips are a filter control, not just a display
-   * of the card's own tags, and are explicitly out of scope for this change. */
+  /** Both /team's own grid and the homepage teaser (team-teaser-grid.tsx)
+   * pass this now — per-card tags are hidden in both places. The teaser's
+   * FilterChip row above the cards is a separate thing (the skill-filter
+   * driving the spark-burst interaction, reads from the same `skills`
+   * data but isn't this component) and stays untouched regardless. */
   hideSkills?: boolean;
 }) {
   const ref = useRef<HTMLDivElement>(null);
