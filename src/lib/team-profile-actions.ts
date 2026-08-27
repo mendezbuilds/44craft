@@ -4,8 +4,12 @@ import { prisma } from "@/lib/prisma";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/auth";
+import { resend, EMAIL_FROM } from "@/lib/resend";
+import { emailShell } from "@/lib/email-template";
 import { TEAM_PHOTOS_BUCKET, uniqueSlugFor, type ProfileSnapshot } from "@/lib/team-profile";
 import { profileSnapshotSchema, changePasswordSchema } from "@/lib/validation";
+
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://44craft.com";
 
 const MAX_PHOTO_BYTES = 5 * 1024 * 1024; // 5MB
 const ALLOWED_PHOTO_TYPES = ["image/png", "image/jpeg", "image/webp", "image/gif"];
@@ -104,6 +108,32 @@ export async function submitProfileAction(input: unknown): Promise<SubmitProfile
   await prisma.profileActivity.create({
     data: { teamProfileId: profile.id, type: "submitted" },
   });
+
+  // The fifth trigger (SPEC.md Section 10's four are all member-facing —
+  // this is the one direction going the other way, admin has no way to
+  // know a review is waiting otherwise). Best-effort and silently skipped
+  // if unconfigured, same as every other send here — a member's submit
+  // must never fail or block on this. CTA is an anchor straight to this
+  // profile's own diff on /admin/reviews (a single page listing every
+  // pending edit inline, not a separate per-id route — anchoring is this
+  // page's own equivalent of "straight to the specific edit", see the
+  // `id={profile.id}` on that page's RevealItem).
+  const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL;
+  if (adminEmail) {
+    await resend.emails.send({
+      from: EMAIL_FROM,
+      to: adminEmail,
+      subject: `New profile edit from ${profile.name} needs review`,
+      html: emailShell({
+        preheader: `${profile.name} submitted a profile edit for review.`,
+        statusLabel: "Needs review",
+        heading: "A profile edit needs review.",
+        paragraphs: [`${profile.name} just submitted changes to their profile — take a look and approve it or send it back with a note.`],
+        ctaLabel: "Review this edit",
+        ctaUrl: `${APP_URL}/admin/reviews#${profile.id}`,
+      }),
+    });
+  }
 
   return { success: true };
 }

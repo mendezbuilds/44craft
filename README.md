@@ -58,6 +58,8 @@ Fill in every value in `.env.local`:
 | `DATABASE_URL` | Supabase → Project Settings → Database → Connection pooling (Transaction mode, port 6543) |
 | `DIRECT_URL` | Supabase → Project Settings → Database → Connection pooling (Session mode, port 5432) |
 | `RESEND_API_KEY` | Resend → API Keys |
+| `CONTACT_EMAIL_TO` | Inbox that receives `/contact` form submissions — optional, that form just reports "not configured yet" without it |
+| `ADMIN_NOTIFICATION_EMAIL` | Inbox that receives "a profile edit needs review" pings — optional, deliberately separate from `CONTACT_EMAIL_TO` |
 | `NEXT_PUBLIC_APP_URL` | `http://localhost:3000` for local dev |
 | `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` | Whatever you want the first admin's login to be — only read by the seed script below, not at runtime |
 

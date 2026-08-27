@@ -33,7 +33,11 @@ export default async function AdminReviewsPage() {
           const before = profile.publishedVersion as ProfileSnapshot | null;
           const after = profile.pendingVersion as ProfileSnapshot;
           return (
-            <RevealItem key={profile.id}>
+            // id — the target of the "review this edit" admin-notification
+            // email's CTA. This page lists every pending edit inline rather
+            // than having a separate per-id route, so an anchor scroll is
+            // this page's own equivalent of "straight to the specific one".
+            <RevealItem key={profile.id} id={profile.id}>
               <AdminPanel>
                 <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
                   <div>
