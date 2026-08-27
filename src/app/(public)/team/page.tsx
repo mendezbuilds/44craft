@@ -37,6 +37,7 @@ export default async function TeamPage() {
                 photo: profile.photo,
                 skills: profile.skills,
               }}
+              hideSkills
             />
           ))}
         </div>

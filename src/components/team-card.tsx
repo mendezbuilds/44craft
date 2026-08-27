@@ -1,10 +1,10 @@
 "use client";
 
 import { useRef } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { Tag } from "@/components/ui/tag";
+import { TeamPhoto } from "@/components/team-photo";
 import { initials } from "@/lib/initials";
 import type { Socials } from "@/lib/team-profile";
 
@@ -67,7 +67,16 @@ const MAX_TILT = 8; // degrees
  * same-row cards to an artificial uniform height now that they're not
  * all identically aspect-locked.
  */
-export function TeamCard({ member }: { member: TeamCardMember }) {
+export function TeamCard({
+  member,
+  hideSkills = false,
+}: {
+  member: TeamCardMember;
+  /** /team's own grid passes this — the homepage teaser (team-teaser-grid.tsx)
+   * doesn't, since its skill chips are a filter control, not just a display
+   * of the card's own tags, and are explicitly out of scope for this change. */
+  hideSkills?: boolean;
+}) {
   const ref = useRef<HTMLDivElement>(null);
   const px = useMotionValue(0.5);
   const py = useMotionValue(0.5);
@@ -95,15 +104,15 @@ export function TeamCard({ member }: { member: TeamCardMember }) {
           className="team-card-glow group flex flex-col overflow-hidden rounded-xl border border-[rgba(255,255,255,0.08)] transition-[border-color] duration-300 hover:border-[rgba(212,175,55,0.5)]"
         >
           {/* Image area — a real photo once uploaded, initials placeholder until then.
-              aspect-square (not flex-1) — see the sizing note above. */}
+              aspect-square (not flex-1) — see the sizing note above. Blurred-
+              backdrop + contain pattern (TeamPhoto) rather than a plain
+              object-cover crop — see that component's own comment for why. */}
           <div className="relative aspect-square shrink-0 overflow-hidden bg-gradient-to-br from-[#1a170f] to-[#0a0a08]">
             {member.photo ? (
-              <Image
+              <TeamPhoto
                 src={member.photo}
-                alt=""
-                fill
                 sizes="(max-width: 600px) 50vw, (max-width: 900px) 33vw, 25vw"
-                className="object-cover transition-transform duration-500 group-hover:scale-105"
+                hoverZoom
               />
             ) : (
               <span
@@ -118,12 +127,14 @@ export function TeamCard({ member }: { member: TeamCardMember }) {
           {/* Info area — separate panel, doesn't sit over the image */}
           <div className="border-t border-[rgba(255,255,255,0.08)] bg-[#141310] px-4 py-4">
             <h3 className="font-display text-base font-bold text-ink">{member.name}</h3>
-            <p className="mb-3 text-sm text-ink-dim">{member.roleTitle}</p>
-            <div className="flex flex-wrap gap-2">
-              {member.skills.map((skill) => (
-                <Tag key={skill}>{skill}</Tag>
-              ))}
-            </div>
+            <p className={hideSkills ? "text-sm text-ink-dim" : "mb-3 text-sm text-ink-dim"}>{member.roleTitle}</p>
+            {!hideSkills && (
+              <div className="flex flex-wrap gap-2">
+                {member.skills.map((skill) => (
+                  <Tag key={skill}>{skill}</Tag>
+                ))}
+              </div>
+            )}
           </div>
         </Link>
       </motion.div>
