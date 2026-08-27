@@ -37,12 +37,20 @@ export async function uploadProjectGalleryImageAction(formData: FormData): Promi
 }
 
 /**
- * SPEC.md Section 10's fourth trigger — "Featured in a project" — never
- * had a send site at all before this. Best-effort, same reasoning as the
- * approve/reject sends in reviews/actions.ts: the assignment already
- * happened, a failed email shouldn't roll it back.
+ * SPEC.md Section 10's fourth trigger — "Featured in a project." Best-
+ * effort, same reasoning as the approve/reject sends in
+ * reviews/actions.ts: the assignment already happened, a failed email
+ * shouldn't roll it back. Cover image is optional (Project.coverImage
+ * can be null) — the shell's `image` param is itself optional for
+ * exactly this case, so a project with no cover just renders without
+ * one rather than a broken `<img>`.
  */
-async function notifyFeatured(teamMemberIds: string[], projectTitle: string, projectSlug: string) {
+async function notifyFeatured(
+  teamMemberIds: string[],
+  projectTitle: string,
+  projectSlug: string,
+  coverImage: string | null,
+) {
   if (teamMemberIds.length === 0) return;
 
   const members = await prisma.teamProfile.findMany({
@@ -58,8 +66,10 @@ async function notifyFeatured(teamMemberIds: string[], projectTitle: string, pro
         subject: `You've been added to ${projectTitle}`,
         html: emailShell({
           preheader: `You've been featured on ${projectTitle}.`,
+          statusLabel: "Featured",
           heading: "You're featured.",
-          paragraphs: [`You've been added to <strong style="color:#F2EEFF;">${projectTitle}</strong> on the 44Craft site.`],
+          paragraphs: [`You've been added to <strong style="color:#F2EEFF;">${projectTitle}</strong> — it's live on the site now.`],
+          image: coverImage ? { src: coverImage, alt: projectTitle } : undefined,
           ctaLabel: "View the project",
           ctaUrl: `${APP_URL}/projects/${projectSlug}`,
         }),
@@ -136,7 +146,7 @@ export async function createProjectAction(
   revalidatePath(`/projects/${rest.slug}`);
   // Brand new project — every connected member is newly featured by
   // definition, no diffing needed (contrast updateProjectAction below).
-  await notifyFeatured(teamMemberIds, rest.title, rest.slug);
+  await notifyFeatured(teamMemberIds, rest.title, rest.slug, coverImage || null);
   // redirect() unmounts the form before any returned state could reach it,
   // so success feedback rides along as a query param instead — picked up
   // by <ToastFromQuery> on the list page (see toast-from-query.tsx).
@@ -191,7 +201,7 @@ export async function updateProjectAction(
   // Only whoever's newly on the project — re-saving with the same roster
   // (or removing someone) shouldn't re-notify everyone who was already
   // there.
-  await notifyFeatured(newlyAdded, rest.title, rest.slug);
+  await notifyFeatured(newlyAdded, rest.title, rest.slug, coverImage || null);
   redirect("/admin/projects?toast=updated");
 }
 

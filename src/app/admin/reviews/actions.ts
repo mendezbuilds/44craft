@@ -68,9 +68,10 @@ export async function approveProfileAction(
     subject: "Your profile is live",
     html: emailShell({
       preheader: "Your 44Craft profile just went live.",
+      statusLabel: "Live",
       heading: "You're live.",
-      paragraphs: ["Your profile just went live on the 44Craft site — go take a look."],
-      ctaLabel: "View your profile",
+      paragraphs: ["Your profile is live on the real site — not a preview, not pending. Go take a look."],
+      ctaLabel: "View your public profile",
       ctaUrl: `${APP_URL}/team/${profile.slug}`,
     }),
   });
@@ -131,13 +132,14 @@ export async function rejectProfileAction(
     subject: "A few tweaks needed on your profile",
     html: emailShell({
       preheader: "An admin left a note on your profile.",
+      statusLabel: "Changes requested",
       heading: "A few tweaks needed.",
       paragraphs: [
-        "An admin reviewed your profile and asked for a couple of changes before it can go live:",
+        "An admin reviewed your profile. A few changes before it goes live:",
         `<span style="color:#F2EEFF;font-style:italic;">"${note.replace(/</g, "&lt;")}"</span>`,
-        "Update your profile and resubmit whenever you're ready.",
+        "Update it and resubmit whenever you're ready.",
       ],
-      ctaLabel: "Edit your profile",
+      ctaLabel: "Update your profile",
       ctaUrl: `${APP_URL}/dashboard/profile`,
     }),
   });

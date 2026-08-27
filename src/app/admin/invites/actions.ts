@@ -52,8 +52,9 @@ export async function sendInviteAction(
     subject: "You've been invited to join 44Craft",
     html: emailShell({
       preheader: "An admin invited you to join the 44Craft team.",
+      statusLabel: "Invited",
       heading: "You're in.",
-      paragraphs: ["An admin invited you to join the 44Craft team. Set your password and you're ready to go."],
+      paragraphs: ["An admin invited you onto the 44Craft team. Set a password and you're in — no forms, no waiting."],
       ctaLabel: "Accept your invite",
       ctaUrl: acceptUrl,
       footnote: "This link expires in 7 days. Didn't expect this? You can ignore it.",
