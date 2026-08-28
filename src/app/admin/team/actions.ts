@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { sendChangesRequestedEmail } from "@/lib/notifications";
+import { rejectProfileSchema } from "@/lib/validation";
 
 export type ToggleUserStatusState = { error?: string; success?: string };
 
@@ -120,6 +122,210 @@ export async function republishProfileAction(
   revalidatePath("/");
 
   return { success: `${profile.name}'s profile is public again.` };
+}
+
+export type UnpublishProfileState = { error?: string; success?: string };
+
+/**
+ * The standalone counterpart to toggleUserStatusAction's unpublish side
+ * effect — same mechanism (hasBeenPublished -> false), triggered on its
+ * own instead of bundled with deactivating the account. For "hide this
+ * profile without locking them out" (on leave, a stale photo needs
+ * pulling, whatever) — sign-in and the account's `status` are completely
+ * untouched. republishProfileAction already handles bringing it back
+ * (it only checks the account is active and a publishedVersion exists —
+ * both already true here), so nothing new was needed on that side.
+ */
+export async function unpublishProfileAction(
+  _prevState: UnpublishProfileState,
+  formData: FormData,
+): Promise<UnpublishProfileState> {
+  await requireAdmin();
+  const profileId = formData.get("profileId");
+  if (typeof profileId !== "string") return { error: "Missing profile id." };
+
+  const profile = await prisma.teamProfile.findUnique({ where: { id: profileId } });
+  if (!profile) return { error: "Team member not found." };
+  if (!profile.hasBeenPublished) return { error: "Already not public." };
+
+  await prisma.teamProfile.update({ where: { id: profileId }, data: { hasBeenPublished: false } });
+
+  revalidatePath("/admin/team");
+  revalidatePath(`/admin/team/${profileId}`);
+  revalidatePath("/team");
+  revalidatePath(`/team/${profile.slug}`);
+  revalidatePath("/");
+
+  return { success: `${profile.name}'s profile is off the public site.` };
+}
+
+export type RequestProfileUpdateState = { error?: string; success?: string };
+
+/**
+ * The proactive counterpart to rejectProfileAction — same "changes
+ * requested" trigger/email/dashboard note, but for when there's no
+ * pending submission to reject in the first place ("please add a bio,"
+ * "your photo's missing"). Guarded against a genuinely pending edit
+ * exactly *because* that case already has its own, more complete
+ * handling (rejectProfileAction also clears pendingVersion) — routing
+ * that case through here instead would leave a rejected pendingVersion
+ * sitting around unrelated to the new note.
+ *
+ * status -> draft is what makes the member's dashboard actually show
+ * this note (StatusCard/dashboard's changesRequestedNote lookup is
+ * gated on status === "draft", the same condition a real rejection
+ * leaves behind) — public visibility is unaffected either way, that's
+ * driven by hasBeenPublished, not status.
+ */
+export async function requestProfileUpdateAction(
+  _prevState: RequestProfileUpdateState,
+  formData: FormData,
+): Promise<RequestProfileUpdateState> {
+  await requireAdmin();
+
+  const parsed = rejectProfileSchema.safeParse({
+    id: formData.get("profileId"),
+    note: formData.get("note"),
+  });
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "A note is required." };
+  }
+  const { id, note } = parsed.data;
+
+  const profile = await prisma.teamProfile.findUnique({
+    where: { id },
+    include: { user: { select: { email: true } } },
+  });
+  if (!profile) return { error: "Team member not found." };
+  if (profile.status === "pending") {
+    return { error: "They already have a pending edit — reject that from /admin/reviews instead." };
+  }
+
+  await prisma.$transaction([
+    prisma.teamProfile.update({ where: { id }, data: { status: "draft" } }),
+    prisma.profileActivity.create({ data: { teamProfileId: id, type: "changes_requested", note } }),
+  ]);
+
+  revalidatePath("/admin/team");
+  revalidatePath(`/admin/team/${id}`);
+
+  await sendChangesRequestedEmail(profile.user.email, note);
+
+  return { success: `Update requested from ${profile.name}.` };
+}
+
+export type ToggleFeaturedState = { error?: string; success?: string };
+
+/**
+ * SPEC.md's homepage teaser is meant to be "4-5 curated members" —
+ * team-teaser.tsx used to just take the first 8 published profiles with
+ * no real admin choice involved. `featuredAt` (not just a bare boolean)
+ * records *when* this was flipped on, so "cap at 5, most recent first"
+ * (lib/team-profile.ts's getFeaturedTeamProfiles) has something
+ * meaningful to order by that doesn't reshuffle every time a featured
+ * member edits unrelated content, the way reusing `updatedAt` would.
+ */
+export async function toggleFeaturedAction(
+  _prevState: ToggleFeaturedState,
+  formData: FormData,
+): Promise<ToggleFeaturedState> {
+  await requireAdmin();
+  const profileId = formData.get("profileId");
+  if (typeof profileId !== "string") return { error: "Missing profile id." };
+
+  const profile = await prisma.teamProfile.findUnique({ where: { id: profileId } });
+  if (!profile) return { error: "Team member not found." };
+
+  const next = !profile.featuredOnHomepage;
+  await prisma.teamProfile.update({
+    where: { id: profileId },
+    data: { featuredOnHomepage: next, featuredAt: next ? new Date() : profile.featuredAt },
+  });
+
+  revalidatePath("/admin/team");
+  revalidatePath(`/admin/team/${profileId}`);
+  revalidatePath("/"); // homepage teaser reads this
+
+  return { success: next ? `${profile.name} is featured on the homepage.` : `${profile.name} is off the homepage teaser.` };
+}
+
+export type SetAdminRoleState = { error?: string; success?: string };
+
+/**
+ * Promote/demote, gated the same way as delete — a real privilege
+ * change deserves the same "type their name" friction, not a bare
+ * toggle a misclick could hit. Both write role in two places (the
+ * established dual pattern everywhere role is set — seed-admin.ts,
+ * link-admin.ts, invite acceptance): the Prisma `users.role` column
+ * used for relational queries, and Supabase auth `app_metadata.role`,
+ * which is what proxy.ts's fast redirect actually reads.
+ *
+ * Demotion additionally refuses to drop the last admin — checked as a
+ * live count immediately before the write, not cached, so two admins
+ * demoting each other back-to-back can't both slip through a stale
+ * count.
+ */
+export async function promoteToAdminAction(
+  _prevState: SetAdminRoleState,
+  formData: FormData,
+): Promise<SetAdminRoleState> {
+  await requireAdmin();
+  const userId = formData.get("userId");
+  const confirmName = formData.get("confirmName");
+  if (typeof userId !== "string") return { error: "Missing user id." };
+
+  const user = await prisma.user.findUnique({ where: { id: userId }, include: { teamProfile: { select: { id: true, name: true } } } });
+  if (!user) return { error: "Account not found." };
+  if (user.role === "admin") return { error: "Already an admin." };
+
+  const expectedName = user.teamProfile?.name ?? user.email;
+  if (typeof confirmName !== "string" || confirmName.trim() !== expectedName) {
+    return { error: "Name didn't match — nothing changed." };
+  }
+
+  const admin = createAdminClient();
+  const { error: authError } = await admin.auth.admin.updateUserById(userId, { app_metadata: { role: "admin" } });
+  if (authError) return { error: `Couldn't update sign-in role: ${authError.message}` };
+
+  await prisma.user.update({ where: { id: userId }, data: { role: "admin" } });
+
+  revalidatePath("/admin/team");
+  if (user.teamProfile) revalidatePath(`/admin/team/${user.teamProfile.id}`);
+  return { success: `${expectedName} is now an admin.` };
+}
+
+export async function demoteToTeamAction(
+  _prevState: SetAdminRoleState,
+  formData: FormData,
+): Promise<SetAdminRoleState> {
+  await requireAdmin();
+  const userId = formData.get("userId");
+  const confirmName = formData.get("confirmName");
+  if (typeof userId !== "string") return { error: "Missing user id." };
+
+  const user = await prisma.user.findUnique({ where: { id: userId }, include: { teamProfile: { select: { id: true, name: true } } } });
+  if (!user) return { error: "Account not found." };
+  if (user.role !== "admin") return { error: "Not currently an admin." };
+
+  const expectedName = user.teamProfile?.name ?? user.email;
+  if (typeof confirmName !== "string" || confirmName.trim() !== expectedName) {
+    return { error: "Name didn't match — nothing changed." };
+  }
+
+  const adminCount = await prisma.user.count({ where: { role: "admin" } });
+  if (adminCount <= 1) {
+    return { error: "Can't remove the last admin — promote someone else first." };
+  }
+
+  const admin = createAdminClient();
+  const { error: authError } = await admin.auth.admin.updateUserById(userId, { app_metadata: { role: "team" } });
+  if (authError) return { error: `Couldn't update sign-in role: ${authError.message}` };
+
+  await prisma.user.update({ where: { id: userId }, data: { role: "team" } });
+
+  revalidatePath("/admin/team");
+  if (user.teamProfile) revalidatePath(`/admin/team/${user.teamProfile.id}`);
+  return { success: `${expectedName} is no longer an admin.` };
 }
 
 export type DeleteTeamMemberState = { error?: string; success?: string };

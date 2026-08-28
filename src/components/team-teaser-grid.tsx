@@ -5,25 +5,16 @@ import { motion } from "framer-motion";
 import { TeamCard, type TeamCardMember } from "@/components/team-card";
 import { TeamCarousel } from "@/components/team-carousel";
 import { GoldBurst } from "@/components/motion/gold-burst";
+import { teamMembersForService } from "@/lib/service-matching";
 import { cn } from "@/lib/cn";
 
-const MAX_CHIPS = 8;
 const MAX_VISIBLE = 8;
 // How long the shatter plays before the new set reforms — roughly matches
 // GoldBurst's "big" particle duration (0.7s) so the gap doesn't outlast
 // the embers or cut them off early.
 const BURST_MS = 600;
 
-function deriveSkillChips(profiles: TeamCardMember[]): string[] {
-  const counts = new Map<string, number>();
-  for (const profile of profiles) {
-    for (const skill of profile.skills) counts.set(skill, (counts.get(skill) ?? 0) + 1);
-  }
-  return [...counts.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, MAX_CHIPS)
-    .map(([skill]) => skill);
-}
+export type FilterService = { slug: string; title: string };
 
 function FilterChip({
   active,
@@ -57,6 +48,17 @@ function FilterChip({
  * meant anything. Client component (filter state, burst timing) wrapping
  * the server-fetched profile list from team-teaser.tsx.
  *
+ * Filter chips are the fixed services list, not raw skill strings —
+ * deriving chips straight from everyone's free-text skills meant the row
+ * grew unbounded as the team grew and people typed different things
+ * (two chips for what's really one skill, one-off entries nobody else
+ * shares). Services are a small, admin-controlled, already-existing
+ * taxonomy (the same one /services renders), so the chip count stays
+ * constant regardless of team size — teamMembersForService (lib/services,
+ * already built for /services/[slug]'s "who you'd work with" section) is
+ * reused here in the same direction it was written for, just triggered
+ * from the team side instead.
+ *
  * Each card's own GoldBurst sits as a sibling to its fade/scale-down
  * animation, not a child of it — the embers need to stay at full opacity
  * for their own duration regardless of how fast the card underneath
@@ -65,38 +67,39 @@ function FilterChip({
 export function TeamTeaserGrid({
   profiles,
   initialFeatured,
+  services,
 }: {
   profiles: TeamCardMember[];
   initialFeatured: TeamCardMember[];
+  services: FilterService[];
 }) {
-  const chips = useMemo(() => deriveSkillChips(profiles), [profiles]);
-  const [activeSkill, setActiveSkill] = useState<string | null>(null);
+  const [activeService, setActiveService] = useState<string | null>(null);
   const [bursting, setBursting] = useState(false);
 
   const visible = useMemo(() => {
-    if (!activeSkill) return initialFeatured;
-    return profiles.filter((p) => p.skills.includes(activeSkill)).slice(0, MAX_VISIBLE);
-  }, [activeSkill, profiles, initialFeatured]);
+    if (!activeService) return initialFeatured;
+    return teamMembersForService(activeService, profiles).slice(0, MAX_VISIBLE);
+  }, [activeService, profiles, initialFeatured]);
 
-  function selectSkill(skill: string | null) {
-    if (skill === activeSkill || bursting) return;
+  function selectService(slug: string | null) {
+    if (slug === activeService || bursting) return;
     setBursting(true);
     setTimeout(() => {
-      setActiveSkill(skill);
+      setActiveService(slug);
       setBursting(false);
     }, BURST_MS);
   }
 
   return (
     <div>
-      {chips.length > 0 && (
+      {services.length > 0 && (
         <div className="mb-8 flex flex-wrap gap-2">
-          <FilterChip active={activeSkill === null} onClick={() => selectSkill(null)}>
+          <FilterChip active={activeService === null} onClick={() => selectService(null)}>
             All
           </FilterChip>
-          {chips.map((skill) => (
-            <FilterChip key={skill} active={activeSkill === skill} onClick={() => selectSkill(skill)}>
-              {skill}
+          {services.map((service) => (
+            <FilterChip key={service.slug} active={activeService === service.slug} onClick={() => selectService(service.slug)}>
+              {service.title}
             </FilterChip>
           ))}
         </div>
@@ -140,7 +143,7 @@ export function TeamTeaserGrid({
               slide, where "shatter" doesn't really read as anything. */}
           <div className="min-[601px]:hidden">
             <motion.div
-              key={activeSkill ?? "all"}
+              key={activeService ?? "all"}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.3, ease: "easeOut" }}
@@ -150,7 +153,7 @@ export function TeamTeaserGrid({
           </div>
         </>
       ) : (
-        <p className="text-sm text-ink-dim">No team members with that skill yet.</p>
+        <p className="text-sm text-ink-dim">No team members covering that yet.</p>
       )}
     </div>
   );

@@ -8,6 +8,10 @@ import { StatusBadge } from "@/components/admin/status-badge";
 import type { ProfileSnapshot } from "@/lib/team-profile";
 import { ToggleStatusButton } from "@/components/admin/toggle-status-button";
 import { RepublishProfileButton } from "@/components/admin/republish-profile-button";
+import { UnpublishProfileButton } from "@/components/admin/unpublish-profile-button";
+import { RequestUpdateForm } from "@/components/admin/request-update-form";
+import { FeaturedToggleButton } from "@/components/admin/featured-toggle-button";
+import { SetAdminRoleButton } from "@/components/admin/set-admin-role-button";
 import { DeleteTeamMemberButton } from "@/components/admin/delete-team-member-button";
 
 const PROFILE_TONE = {
@@ -21,9 +25,11 @@ export default async function AdminTeamMemberPage({ params }: { params: Promise<
 
   const profile = await prisma.teamProfile.findUnique({
     where: { id },
-    include: { user: { select: { id: true, email: true, status: true } } },
+    include: { user: { select: { id: true, email: true, status: true, role: true } } },
   });
   if (!profile) notFound();
+
+  const adminCount = profile.user.role === "admin" ? await prisma.user.count({ where: { role: "admin" } }) : 0;
 
   // Was public at some point (a real publishedVersion snapshot exists)
   // but isn't now — the only way that happens is toggleUserStatusAction
@@ -75,6 +81,8 @@ export default async function AdminTeamMemberPage({ params }: { params: Promise<
                 />
                 {profile.hasBeenPublished && <StatusBadge label="live on site" tone="positive" />}
                 {wasUnpublished && <StatusBadge label="unpublished" tone="warning" />}
+                {profile.featuredOnHomepage && <StatusBadge label="featured on homepage" tone="positive" />}
+                {profile.user.role === "admin" && <StatusBadge label="admin" tone="positive" />}
               </div>
             </div>
           </div>
@@ -86,6 +94,7 @@ export default async function AdminTeamMemberPage({ params }: { params: Promise<
               </AdminButton>
             )}
             <ToggleStatusButton userId={profile.user.id} status={profile.user.status} />
+            {profile.hasBeenPublished && <UnpublishProfileButton profileId={profile.id} />}
             {canRepublish && <RepublishProfileButton profileId={profile.id} />}
           </div>
         </div>
@@ -94,8 +103,8 @@ export default async function AdminTeamMemberPage({ params }: { params: Promise<
           <div className="mt-6 border-t border-[rgba(255,255,255,0.08)] pt-4">
             <p className="text-sm text-ink-dim">
               {canRepublish
-                ? "This profile was pulled off the public site when the account was deactivated. Reactivating didn't bring it back automatically — use Republish above once you've confirmed their info is still current."
-                : "This profile was pulled off the public site when the account was deactivated. Reactivate the account first, then republish."}
+                ? "This profile is off the public site — either unpublished directly or pulled off automatically when the account was deactivated. It won't come back on its own — use Republish above once you've confirmed their info is still current."
+                : "This profile is off the public site, and the account is deactivated. Reactivate the account first, then republish."}
             </p>
           </div>
         )}
@@ -144,6 +153,50 @@ export default async function AdminTeamMemberPage({ params }: { params: Promise<
               </Link>
             </p>
           </div>
+        )}
+
+        {profile.status !== "pending" && (
+          <div className="mt-6 border-t border-[rgba(255,255,255,0.08)] pt-4">
+            <p className="mb-1 font-mono text-[11px] tracking-wide text-ink-dim uppercase">Nudge</p>
+            <p className="mb-3 text-sm text-ink-dim">
+              Ask them to update something — a missing bio, a stale photo — without waiting for them to submit an
+              edit first. Sends the same email and dashboard note as rejecting a submission.
+            </p>
+            <RequestUpdateForm profileId={profile.id} />
+          </div>
+        )}
+      </AdminPanel>
+
+      <AdminPanel>
+        <p className="mb-1 font-mono text-[11px] tracking-wide text-ink-dim uppercase">Homepage</p>
+        <p className="mb-3 text-sm text-ink-dim">
+          {profile.featuredOnHomepage
+            ? "Currently one of the curated members shown in the homepage team teaser."
+            : "Not currently shown on the homepage teaser — that section pulls from whoever's featured here, capped at 5."}
+        </p>
+        <FeaturedToggleButton profileId={profile.id} featured={profile.featuredOnHomepage} />
+      </AdminPanel>
+
+      {/* Its own panel — a role change deserves the same seriousness as
+          delete (confirmed via typing the name), so it gets the same
+          separation from the casual toggles above. */}
+      <AdminPanel className={profile.user.role === "admin" ? "border-red-500/20" : undefined}>
+        <p className="mb-1 font-mono text-[11px] tracking-wide text-ink-dim uppercase">Admin access</p>
+        <p className="mb-4 text-sm text-ink-dim">
+          {profile.user.role === "admin"
+            ? "Full access to /admin — every member's data, invites, and site content."
+            : "Currently a regular team member — no access to /admin."}
+        </p>
+        {profile.user.role === "admin" ? (
+          adminCount <= 1 ? (
+            <p className="text-sm text-ink-dim/70 italic">
+              The only admin left — promote someone else before this account can be demoted.
+            </p>
+          ) : (
+            <SetAdminRoleButton mode="demote" userId={profile.user.id} name={profile.name} />
+          )
+        ) : (
+          <SetAdminRoleButton mode="promote" userId={profile.user.id} name={profile.name} />
         )}
       </AdminPanel>
 

@@ -79,6 +79,16 @@ model TeamProfile {
   // since the content may be stale by the time they're reactivated.
   hasBeenPublished Boolean @default(false)
 
+  // Admin-curated selection for the homepage teaser (SPEC.md: "meant to
+  // be 4-5 curated members"), replacing what used to just be "the first
+  // 8 published profiles" with no real choice involved. featuredAt tracks
+  // *when* the flag was set — not just a plain boolean — so "cap at 5,
+  // most recently flagged first" has something real to order by; reusing
+  // `updatedAt` for that would reshuffle the homepage order every time a
+  // featured member edits anything unrelated to this flag.
+  featuredOnHomepage Boolean   @default(false)
+  featuredAt         DateTime?
+
   // Projects worked on. Doubling as "featured work" (reverse of this
   // relation) keeps it admin-assigned-only by construction: only Project
   // CRUD (admin) can add/remove entries here, never the member themselves.

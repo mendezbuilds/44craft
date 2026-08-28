@@ -113,3 +113,22 @@ export async function getPublishedTeamProfileBySlug(slug: string): Promise<Publi
   });
   return row ? toPublicProfile(row) : null;
 }
+
+/**
+ * The homepage teaser's actual selection (SPEC.md: "meant to be 4-5
+ * curated members") — admin-flagged via featuredOnHomepage, not "the
+ * first N published profiles" (what this used to be before that flag
+ * existed). Capped at 5 regardless of how many are flagged; ordered by
+ * `featuredAt` — when the flag was actually set, not `updatedAt` (which
+ * would reshuffle the homepage every time a featured member edited
+ * anything unrelated).
+ */
+export async function getFeaturedTeamProfiles(): Promise<PublicProfile[]> {
+  const rows = await prisma.teamProfile.findMany({
+    where: { hasBeenPublished: true, featuredOnHomepage: true },
+    include: { projects: { select: { id: true, slug: true, title: true, coverImage: true } } },
+    orderBy: { featuredAt: "desc" },
+    take: 5,
+  });
+  return rows.map(toPublicProfile);
+}

@@ -4,7 +4,8 @@ import { DiamondMark } from "@/components/icons/diamond-mark";
 import { TeamTeaserGrid } from "@/components/team-teaser-grid";
 import { Reveal } from "@/components/motion/reveal";
 import { RevealItem } from "@/components/motion/reveal-item";
-import { getPublishedTeamProfiles } from "@/lib/team-profile";
+import { getPublishedTeamProfiles, getFeaturedTeamProfiles } from "@/lib/team-profile";
+import { getAllServices } from "@/lib/services";
 
 /**
  * Real published team_profiles as of Phase 5 (was static mock data through
@@ -13,9 +14,11 @@ import { getPublishedTeamProfiles } from "@/lib/team-profile";
  * team-teaser-grid.tsx, the client component this delegates to once data
  * is fetched.
  *
- * No featuring mechanism exists yet — the default (unfiltered) view shows
- * the first 8 published profiles, same count the static version used;
- * filtering searches the full published set, not just those 8.
+ * The default (unfiltered) view shows admin-curated featured members
+ * (SPEC.md: "4-5 curated members" — getFeaturedTeamProfiles, capped at 5)
+ * rather than an arbitrary "first N published" selection; the filter row
+ * still searches the full published roster, not just those 5 — see
+ * team-teaser-grid.tsx for the service-category filter itself.
  *
  * Section header/copy always renders, even with zero published profiles —
  * only the grid underneath gets an empty state (matching /team's own
@@ -24,16 +27,21 @@ import { getPublishedTeamProfiles } from "@/lib/team-profile";
  * roster was empty.
  */
 export async function TeamTeaser() {
-  const profiles = await getPublishedTeamProfiles();
-  const members = profiles.map((profile) => ({
+  const [profiles, featuredProfiles, services] = await Promise.all([
+    getPublishedTeamProfiles(),
+    getFeaturedTeamProfiles(),
+    getAllServices(),
+  ]);
+  const toMember = (profile: (typeof profiles)[number]) => ({
     slug: profile.slug,
     name: profile.name,
     roleTitle: profile.roleTitle,
     photo: profile.photo,
     skills: profile.skills,
     socials: profile.socials,
-  }));
-  const featured = members.slice(0, 8);
+  });
+  const members = profiles.map(toMember);
+  const featured = featuredProfiles.map(toMember);
 
   return (
     <Section id="team" className="py-24 min-[901px]:py-32">
@@ -65,7 +73,7 @@ export async function TeamTeaser() {
 
         {members.length > 0 ? (
           <RevealItem>
-            <TeamTeaserGrid profiles={members} initialFeatured={featured} />
+            <TeamTeaserGrid profiles={members} initialFeatured={featured} services={services} />
           </RevealItem>
         ) : (
           <RevealItem>

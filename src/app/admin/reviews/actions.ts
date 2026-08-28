@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
 import { resend, EMAIL_FROM } from "@/lib/resend";
 import { emailShell } from "@/lib/email-template";
+import { sendChangesRequestedEmail } from "@/lib/notifications";
 import { rejectProfileSchema } from "@/lib/validation";
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://44craft.com";
@@ -147,23 +148,7 @@ export async function rejectProfileAction(
   // Best-effort, same reasoning as approveProfileAction above — the
   // status change already happened and is what the member sees on their
   // dashboard either way.
-  await resend.emails.send({
-    from: EMAIL_FROM,
-    to: profile.user.email,
-    subject: "A few tweaks needed on your profile",
-    html: emailShell({
-      preheader: "An admin left a note on your profile.",
-      statusLabel: "Changes requested",
-      heading: "A few tweaks needed.",
-      paragraphs: [
-        "An admin reviewed your profile. A few changes before it goes live:",
-        `<span style="color:#F2EEFF;font-style:italic;">"${note.replace(/</g, "&lt;")}"</span>`,
-        "Update it and resubmit whenever you're ready.",
-      ],
-      ctaLabel: "Update your profile",
-      ctaUrl: `${APP_URL}/dashboard/profile`,
-    }),
-  });
+  await sendChangesRequestedEmail(profile.user.email, note);
 
   return {};
 }
