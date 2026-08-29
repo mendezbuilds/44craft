@@ -92,10 +92,28 @@ export function ContactSection() {
 
           <motion.h2
             variants={riseInItem}
-            className="mb-10 max-w-[560px] text-[clamp(28px,4vw,40px)] leading-[1.15] font-display font-bold tracking-[-1px] text-ink"
+            className="mb-4 max-w-[560px] text-[clamp(28px,4vw,40px)] leading-[1.15] font-display font-bold tracking-[-1px] text-ink"
           >
             Start a project.
           </motion.h2>
+
+          {/* Direct email, alongside the form rather than instead of it —
+              stays visible through the success state too (unlike the
+              form/success swap below), it's independent contact info, not
+              part of that flow. Keep in sync with EMAIL_FROM
+              (lib/resend.ts) if the domain ever changes — not imported
+              directly since that module also holds the Resend client
+              instantiated with the secret API key, unsafe to pull into a
+              client component. */}
+          <RevealItem className="mb-10 text-sm text-ink-dim">
+            Or email us directly at{" "}
+            <a
+              href="mailto:hello@44craft.com"
+              className="text-ink underline decoration-[rgba(255,255,255,0.24)] underline-offset-4 hover:text-gold"
+            >
+              hello@44craft.com
+            </a>
+          </RevealItem>
 
           <AnimatePresence mode="wait">
             {state.success ? (
