@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,10 @@ import { Tag } from "@/components/ui/tag";
 import { Spinner } from "@/components/ui/spinner";
 import { useToast } from "@/components/ui/toast";
 import { uploadProfilePhotoAction, submitProfileAction } from "@/lib/team-profile-actions";
+import { profileSnapshotSchema, socialsSchema } from "@/lib/validation";
 import type { ProfileSnapshot, Socials } from "@/lib/team-profile";
+
+const MAX_SKILLS = 20;
 
 const STEPS = ["Photo", "Name & role", "Bio", "Skills", "Socials", "Featured work"] as const;
 
@@ -58,6 +61,43 @@ export function ProfileEditor({ initial }: { initial: ProfileSnapshot }) {
     update("socials", { ...form.socials, [key]: value });
   }
 
+  // Runs the *exact* schema submitProfileAction validates server-side,
+  // not a hand-rolled approximation that could quietly drift from it —
+  // this is what was actually missing before. Name/role had no client
+  // check against the server's 80-char cap at all, so someone could
+  // sail through step 1, then every later step, and only find out at
+  // the very last one (wherever "Submit for review" happens to live —
+  // currently Featured Work) that something several steps back was
+  // wrong. The error rendered at the bottom of *whatever step you're
+  // currently on* when that happened, which is why it looked like a
+  // Featured Work bug specifically — it wasn't a stray field error
+  // scoped to the wrong step, it was the *only* validation that had
+  // ever run, running too late to matter to the step it displayed on.
+  const fieldErrors = useMemo(() => {
+    const result = profileSnapshotSchema.safeParse(form);
+    return result.success ? {} : result.error.flatten().fieldErrors;
+  }, [form]);
+
+  // Same schema, parsed on its own — gives a per-platform message (which
+  // of github/linkedin/x/website is actually wrong) instead of just
+  // "something in socials failed," which fieldErrors.socials alone would
+  // reduce it to (profileSnapshotSchema.flatten() only groups by the
+  // top-level key).
+  const socialErrors = useMemo(() => {
+    const result = socialsSchema.safeParse(form.socials);
+    return result.success ? {} : result.error.flatten().fieldErrors;
+  }, [form.socials]);
+
+  // Which step a field actually lives on — used so a still-invalid final
+  // state (only reachable from data that predates this fix, e.g. a name
+  // saved before the 80-char cap existed) points back to a specific step
+  // instead of just disabling Submit with no explanation.
+  const FIELD_STEP: Record<string, number> = { photo: 0, name: 1, roleTitle: 1, bio: 2, skills: 3, socials: 4 };
+  const firstInvalidStep = Object.keys(fieldErrors)
+    .map((key) => FIELD_STEP[key])
+    .filter((s): s is number => s !== undefined)
+    .sort((a, b) => a - b)[0];
+
   async function onPhotoSelected(file: File) {
     setUploading(true);
     setError(null);
@@ -78,7 +118,7 @@ export function ProfileEditor({ initial }: { initial: ProfileSnapshot }) {
 
   function addSkill() {
     const value = skillInput.trim();
-    if (!value || form.skills.includes(value)) {
+    if (!value || form.skills.includes(value) || form.skills.length >= MAX_SKILLS) {
       setSkillInput("");
       return;
     }
@@ -94,7 +134,8 @@ export function ProfileEditor({ initial }: { initial: ProfileSnapshot }) {
   }
 
   function canAdvance() {
-    if (step === 1) return form.name.trim().length > 0 && form.roleTitle.trim().length > 0;
+    if (step === 1) return !fieldErrors.name && !fieldErrors.roleTitle;
+    if (step === 4) return !fieldErrors.socials;
     return true;
   }
 
@@ -194,8 +235,12 @@ export function ProfileEditor({ initial }: { initial: ProfileSnapshot }) {
             <input
               value={form.name}
               onChange={(e) => update("name", e.target.value)}
+              maxLength={80}
               className={inputClasses}
             />
+            {fieldErrors.name && (
+              <span className="text-xs text-red-400">{fieldErrors.name[0]}</span>
+            )}
           </label>
           <label className="flex flex-col gap-1.5 text-sm text-ink-dim">
             Role
@@ -203,8 +248,12 @@ export function ProfileEditor({ initial }: { initial: ProfileSnapshot }) {
               value={form.roleTitle}
               onChange={(e) => update("roleTitle", e.target.value)}
               placeholder="e.g. Smart Contract Engineer"
+              maxLength={80}
               className={inputClasses}
             />
+            {fieldErrors.roleTitle && (
+              <span className="text-xs text-red-400">{fieldErrors.roleTitle[0]}</span>
+            )}
           </label>
         </div>
       )}
@@ -227,7 +276,11 @@ export function ProfileEditor({ initial }: { initial: ProfileSnapshot }) {
       {step === 3 && (
         <div>
           <h2 className="mb-1 font-display text-lg font-bold text-ink">Skills</h2>
-          <p className="mb-4 text-sm text-ink-dim">Press Enter to add each one.</p>
+          <p className="mb-4 text-sm text-ink-dim">
+            {form.skills.length >= MAX_SKILLS
+              ? `That's the max (${MAX_SKILLS}) — remove one to add another.`
+              : "Press Enter to add each one."}
+          </p>
           <input
             value={skillInput}
             onChange={(e) => setSkillInput(e.target.value)}
@@ -237,6 +290,7 @@ export function ProfileEditor({ initial }: { initial: ProfileSnapshot }) {
                 addSkill();
               }
             }}
+            disabled={form.skills.length >= MAX_SKILLS}
             placeholder="e.g. Solidity"
             className={inputClasses}
           />
@@ -274,6 +328,9 @@ export function ProfileEditor({ initial }: { initial: ProfileSnapshot }) {
                 placeholder={placeholder}
                 className={inputClasses}
               />
+              {socialErrors[key] && (
+                <span className="text-xs text-red-400">{socialErrors[key]![0]}</span>
+              )}
             </label>
           ))}
         </div>
@@ -288,6 +345,21 @@ export function ProfileEditor({ initial }: { initial: ProfileSnapshot }) {
             without it.
           </p>
         </div>
+      )}
+
+      {/* Only reachable on the last step from data that predates a
+          validation rule (see firstInvalidStep above) — every step you
+          can actually navigate through is already gated by canAdvance(),
+          so this isn't the normal path to an error, it's the fallback
+          for the abnormal one. */}
+      {step === STEPS.length - 1 && firstInvalidStep !== undefined && (
+        <p className="mt-4 text-sm text-red-400" role="alert">
+          {STEPS[firstInvalidStep]} needs a fix before this can be submitted —{" "}
+          <button type="button" onClick={() => setStep(firstInvalidStep)} className="underline underline-offset-2">
+            go back
+          </button>
+          .
+        </p>
       )}
 
       {error && (
@@ -312,7 +384,13 @@ export function ProfileEditor({ initial }: { initial: ProfileSnapshot }) {
             Next
           </Button>
         ) : (
-          <Button type="button" variant="primary" disabled={submitting} onClick={handleSubmit} className="gap-2">
+          <Button
+            type="button"
+            variant="primary"
+            disabled={submitting || firstInvalidStep !== undefined}
+            onClick={handleSubmit}
+            className="gap-2"
+          >
             {submitting && <Spinner />}
             {submitting ? "Submitting…" : "Submit for review"}
           </Button>
