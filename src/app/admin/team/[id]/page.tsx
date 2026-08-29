@@ -172,7 +172,7 @@ export default async function AdminTeamMemberPage({ params }: { params: Promise<
         <p className="mb-3 text-sm text-ink-dim">
           {profile.featuredOnHomepage
             ? "Currently one of the curated members shown in the homepage team teaser."
-            : "Not currently shown on the homepage teaser — that section pulls from whoever's featured here, capped at 5."}
+            : "Not currently shown on the homepage teaser — that section pulls from whoever's featured here."}
         </p>
         <FeaturedToggleButton profileId={profile.id} featured={profile.featuredOnHomepage} />
       </AdminPanel>

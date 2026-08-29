@@ -217,12 +217,12 @@ export async function requestProfileUpdateAction(
 export type ToggleFeaturedState = { error?: string; success?: string };
 
 /**
- * SPEC.md's homepage teaser is meant to be "4-5 curated members" —
- * team-teaser.tsx used to just take the first 8 published profiles with
- * no real admin choice involved. `featuredAt` (not just a bare boolean)
- * records *when* this was flipped on, so "cap at 5, most recent first"
- * (lib/team-profile.ts's getFeaturedTeamProfiles) has something
- * meaningful to order by that doesn't reshuffle every time a featured
+ * The homepage teaser used to just take the first 8 published profiles
+ * with no real admin choice involved. `featuredAt` (not just a bare
+ * boolean) records *when* this was flipped on, so "most recent first"
+ * (lib/team-profile.ts's getFeaturedTeamProfiles — no cap on count, by
+ * request) has something meaningful to order by that doesn't reshuffle
+ * every time a featured
  * member edits unrelated content, the way reusing `updatedAt` would.
  */
 export async function toggleFeaturedAction(

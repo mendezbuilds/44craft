@@ -15,8 +15,9 @@ import { getAllServices } from "@/lib/services";
  * is fetched.
  *
  * The default (unfiltered) view shows admin-curated featured members
- * (SPEC.md: "4-5 curated members" — getFeaturedTeamProfiles, capped at 5)
- * rather than an arbitrary "first N published" selection; the filter row
+ * (getFeaturedTeamProfiles — every hasBeenPublished profile with
+ * featuredOnHomepage set, no cap on count) rather than an arbitrary
+ * "first N published" selection; the filter row
  * still searches the full published roster, not just those 5 — see
  * team-teaser-grid.tsx for the service-category filter itself.
  *
@@ -38,7 +39,6 @@ export async function TeamTeaser() {
     roleTitle: profile.roleTitle,
     photo: profile.photo,
     skills: profile.skills,
-    socials: profile.socials,
   });
   const members = profiles.map(toMember);
   const featured = featuredProfiles.map(toMember);

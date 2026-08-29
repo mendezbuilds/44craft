@@ -6,18 +6,16 @@ import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { Tag } from "@/components/ui/tag";
 import { TeamPhoto } from "@/components/team-photo";
 import { initials } from "@/lib/initials";
-import type { Socials } from "@/lib/team-profile";
 
+// No `socials` field — neither this card nor team-card-compact.tsx (the
+// mobile carousel slide) show socials, on request; real clickable social
+// links live on the profile page itself.
 export type TeamCardMember = {
   slug: string;
   name: string;
   roleTitle: string;
   photo: string | null;
   skills: string[];
-  // Optional — only team-card-compact.tsx (the mobile teaser carousel)
-  // actually renders these; the desktop grid card doesn't show socials at
-  // all, so most call sites can leave this off.
-  socials?: Socials;
 };
 
 const MAX_TILT = 8; // degrees
