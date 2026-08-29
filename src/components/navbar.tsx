@@ -8,6 +8,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
 import { NAV_LINKS } from "@/lib/nav-links";
+import { scrollToHashIfPresent } from "@/lib/hash-scroll";
 
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
@@ -74,6 +75,9 @@ export function Navbar() {
           <Link
             key={link.href}
             href={link.href}
+            onClick={(e) => {
+              if (scrollToHashIfPresent(link.href)) e.preventDefault();
+            }}
             className="text-[13.5px] font-medium text-ink-dim transition-colors hover:text-ink focus-visible:outline focus-visible:outline-1 focus-visible:outline-gold focus-visible:outline-offset-4"
           >
             {link.label}
@@ -132,7 +136,10 @@ export function Navbar() {
                   <Link
                     key={link.href}
                     href={link.href}
-                    onClick={() => setMenuOpen(false)}
+                    onClick={(e) => {
+                      setMenuOpen(false);
+                      if (scrollToHashIfPresent(link.href)) e.preventDefault();
+                    }}
                     className="font-display text-2xl font-bold text-ink"
                   >
                     {link.label}

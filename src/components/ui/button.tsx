@@ -1,6 +1,9 @@
+"use client";
+
 import Link from "next/link";
 import type { ButtonHTMLAttributes, AnchorHTMLAttributes } from "react";
 import { cn } from "@/lib/cn";
+import { scrollToHashIfPresent } from "@/lib/hash-scroll";
 
 type Variant = "primary" | "ghost";
 
@@ -55,8 +58,22 @@ export function Button({ variant = "primary", className, ...props }: ButtonProps
   const classes = cn(base, variants[variant], className);
 
   if ("href" in props && props.href) {
-    const { href, ...rest } = props;
-    return <Link href={href} className={classes} {...rest} />;
+    const { href, onClick, ...rest } = props;
+    return (
+      <Link
+        href={href}
+        className={classes}
+        onClick={(e) => {
+          // See hash-scroll.ts — next/link's own hash handling only
+          // fires on an actual URL change, so a same-page anchor link
+          // clicked twice (with a manual scroll away in between) does
+          // nothing the second time without this.
+          if (scrollToHashIfPresent(href)) e.preventDefault();
+          onClick?.(e);
+        }}
+        {...rest}
+      />
+    );
   }
 
   const { type = "button", ...rest } = props as ButtonAsButton;

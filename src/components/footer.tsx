@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { NAV_LINKS } from "@/lib/nav-links";
+import { scrollToHashIfPresent } from "@/lib/hash-scroll";
 import { Reveal } from "@/components/motion/reveal";
 import { RevealItem } from "@/components/motion/reveal-item";
 import { riseInItem } from "@/lib/motion";
@@ -77,6 +78,9 @@ export function Footer() {
                 <Link
                   key={link.href}
                   href={link.href}
+                  onClick={(e) => {
+                    if (scrollToHashIfPresent(link.href)) e.preventDefault();
+                  }}
                   className="text-base font-medium text-ink-dim transition-all duration-300 hover:translate-x-1 hover:text-ink"
                 >
                   {link.label}
